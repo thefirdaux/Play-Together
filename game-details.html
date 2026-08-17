@@ -501,6 +501,139 @@
     font-weight: 700;
     cursor: pointer;
   }
+
+  /* ---------- Share Game bottom sheet ---------- */
+  .share-sheet-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    justify-content: center;
+  }
+
+  .share-sheet-overlay.open{
+    display: flex;
+  }
+
+  .share-sheet-backdrop{
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .share-sheet-overlay.open .share-sheet-backdrop{
+    opacity: 1;
+  }
+
+  .share-sheet{
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    background: var(--color-surface);
+    border-radius: 20px 20px 0 0;
+    padding: var(--space-3) var(--space-5) var(--space-6);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.16);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .share-sheet-overlay.open .share-sheet{
+    transform: translateY(0);
+  }
+
+  .share-sheet-handle{
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--color-border);
+    margin: 0 auto var(--space-3);
+  }
+
+  .share-sheet-title{
+    text-align: center;
+    font-size: var(--fs-body);
+    font-weight: 700;
+    color: var(--color-ink);
+    margin-bottom: var(--space-1);
+  }
+
+  .share-sheet-desc{
+    text-align: center;
+    font-size: var(--fs-caption);
+    color: var(--color-ink-soft);
+    margin: 0 0 var(--space-5);
+  }
+
+  .share-link-row{
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-1);
+    margin-bottom: var(--space-4);
+  }
+
+  .share-link-text{
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-3) var(--space-3);
+    font-family: var(--font-body);
+    font-size: var(--fs-small);
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .share-copy-btn{
+    flex-shrink: 0;
+    margin-right: var(--space-1);
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-body);
+    font-size: var(--fs-caption);
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .share-copy-btn:active{
+    opacity: 0.85;
+  }
+
+  .share-native-btn{
+    width: 100%;
+    margin-bottom: var(--space-3);
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .share-sheet-close{
+    width: 100%;
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: #F2F2F2;
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -650,6 +783,24 @@
     </button>
 
     <button class="nav-sheet-cancel" id="nav-sheet-cancel" type="button">Cancel</button>
+  </div>
+</div>
+
+<!-- Share Game bottom sheet -->
+<div class="share-sheet-overlay" id="share-sheet-overlay" aria-hidden="true">
+  <div class="share-sheet-backdrop" id="share-sheet-backdrop"></div>
+  <div class="share-sheet" id="share-sheet" role="dialog" aria-modal="true" aria-label="Share game">
+    <div class="share-sheet-handle"></div>
+    <div class="share-sheet-title">Share this game</div>
+    <p class="share-sheet-desc">Anyone with this link can view the game and join.</p>
+
+    <div class="share-link-row">
+      <div class="share-link-text" id="share-link-text"></div>
+      <button class="share-copy-btn" id="share-copy-btn" type="button">Copy</button>
+    </div>
+
+    <button class="share-native-btn" id="share-native-btn" type="button">Share via…</button>
+    <button class="share-sheet-close" id="share-sheet-close" type="button">Done</button>
   </div>
 </div>
 
@@ -838,11 +989,11 @@
   })();
 
   // ---------- Share game ----------
-  // Shares a link to game-title.html (the player-facing page with a Join
-  // button) rather than this page — this page is the creator's own view
-  // and shouldn't be what invited players land on. Uses the device's
-  // native share sheet when available (mobile browsers); falls back to
-  // copying the link to the clipboard on desktop.
+  // Clicking "Share game" opens a bottom sheet showing the game-title.html
+  // link (the player-facing page with a Join button) with a Copy button,
+  // plus an optional "Share via…" button that invokes the device's native
+  // share sheet when available. This page itself is the creator's own
+  // view and shouldn't be what invited players land on.
   //
   // The link is built to be much shorter than the raw "?data=<JSON>" this
   // page itself was opened with: object keys are minified (title -> t,
@@ -854,9 +1005,14 @@
   // read back by game-title.html.
   (function(){
     var btn = document.getElementById('share-game-btn');
-    if (!btn) return;
+    var overlay = document.getElementById('share-sheet-overlay');
+    var backdrop = document.getElementById('share-sheet-backdrop');
+    var closeBtn = document.getElementById('share-sheet-close');
+    var copyBtn = document.getElementById('share-copy-btn');
+    var linkTextEl = document.getElementById('share-link-text');
+    var nativeBtn = document.getElementById('share-native-btn');
 
-    var originalLabel = btn.textContent;
+    if (!btn || !overlay) return;
 
     var SHORT_KEYS = {
       title: 't', date: 'd', timeStart: 'ts', timeEnd: 'te', venue: 'v',
@@ -914,25 +1070,45 @@
       };
     }
 
-    function flashLabel(text){
-      btn.textContent = text;
-      setTimeout(function(){
-        btn.textContent = originalLabel;
-      }, 1500);
+    function openSheet(){
+      linkTextEl.textContent = getShareUrl();
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
     }
 
-    btn.addEventListener('click', function(){
-      if (navigator.share){
-        navigator.share(getShareData()).catch(function(){});
-        return;
-      }
+    function closeSheet(){
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
 
-      if (navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(getShareUrl())
-          .then(function(){ flashLabel('Link copied!'); })
-          .catch(function(){});
-      }
+    btn.addEventListener('click', openSheet);
+    backdrop.addEventListener('click', closeSheet);
+    closeBtn.addEventListener('click', closeSheet);
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeSheet();
     });
+
+    var copyOriginalLabel = copyBtn.textContent;
+    copyBtn.addEventListener('click', function(){
+      if (!(navigator.clipboard && navigator.clipboard.writeText)) return;
+      navigator.clipboard.writeText(linkTextEl.textContent)
+        .then(function(){
+          copyBtn.textContent = 'Copied!';
+          setTimeout(function(){ copyBtn.textContent = copyOriginalLabel; }, 1500);
+        })
+        .catch(function(){});
+    });
+
+    if (navigator.share){
+      nativeBtn.addEventListener('click', function(){
+        navigator.share(getShareData()).catch(function(){});
+      });
+    } else {
+      nativeBtn.style.display = 'none';
+    }
   })();
 </script>
 

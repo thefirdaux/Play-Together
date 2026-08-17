@@ -1052,8 +1052,13 @@
         try { data = JSON.parse(raw); } catch (e) { data = {}; }
       }
 
+      // The readable "n" slug reflects what the admin actually filled in
+      // on index.html — game title AND date — so the link itself is
+      // recognizable at a glance, not just the opaque "g" payload.
       var titleEl = document.querySelector('.game-title');
-      var slug = slugify(titleEl ? titleEl.textContent : '') || 'game';
+      var title = titleEl ? titleEl.textContent : (data.title || '');
+      var slugSource = [title, data.date].filter(Boolean).join(' ');
+      var slug = slugify(slugSource) || 'game';
 
       var joinUrl = new URL('game-title.html', window.location.href);
       joinUrl.searchParams.set('n', slug);

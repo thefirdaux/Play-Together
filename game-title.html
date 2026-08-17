@@ -512,6 +512,126 @@
     font-weight: 700;
     cursor: pointer;
   }
+
+  /* ---------- Join Game bottom sheet ---------- */
+  .join-sheet-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    justify-content: center;
+  }
+
+  .join-sheet-overlay.open{
+    display: flex;
+  }
+
+  .join-sheet-backdrop{
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .join-sheet-overlay.open .join-sheet-backdrop{
+    opacity: 1;
+  }
+
+  .join-sheet{
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    background: var(--color-surface);
+    border-radius: 20px 20px 0 0;
+    padding: var(--space-3) var(--space-5) var(--space-6);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.16);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .join-sheet-overlay.open .join-sheet{
+    transform: translateY(0);
+  }
+
+  .join-sheet-handle{
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--color-border);
+    margin: 0 auto var(--space-3);
+  }
+
+  .join-sheet-title{
+    text-align: center;
+    font-size: var(--fs-body);
+    font-weight: 700;
+    color: var(--color-ink);
+    margin-bottom: var(--space-5);
+  }
+
+  .join-field-group{
+    margin-bottom: var(--space-4);
+  }
+
+  .join-field-label{
+    display: block;
+    font-size: var(--fs-caption);
+    color: var(--color-ink-soft);
+    margin-bottom: var(--space-1);
+  }
+
+  .join-field-input{
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3) var(--space-4);
+    font-family: var(--font-body);
+    /* 16px minimum — iOS Safari auto-zooms the page on focus for any
+       text input under 16px. */
+    font-size: 16px;
+    color: var(--color-ink);
+    background: transparent;
+    outline: none;
+  }
+
+  .join-field-input:focus{
+    border-color: var(--color-primary);
+  }
+
+  .join-field-input.is-invalid{
+    border-color: #C0392B;
+  }
+
+  .join-sheet-submit{
+    width: 100%;
+    margin-top: var(--space-2);
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .join-sheet-cancel{
+    width: 100%;
+    margin-top: var(--space-3);
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: #F2F2F2;
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -661,6 +781,27 @@
     </button>
 
     <button class="nav-sheet-cancel" id="nav-sheet-cancel" type="button">Cancel</button>
+  </div>
+</div>
+
+<!-- Join Game bottom sheet -->
+<div class="join-sheet-overlay" id="join-sheet-overlay" aria-hidden="true">
+  <div class="join-sheet-backdrop" id="join-sheet-backdrop"></div>
+  <div class="join-sheet" id="join-sheet" role="dialog" aria-modal="true" aria-label="Join game">
+    <div class="join-sheet-handle"></div>
+    <div class="join-sheet-title">Enter your details to join</div>
+
+    <div class="join-field-group">
+      <label class="join-field-label" for="join-name-input">Name</label>
+      <input class="join-field-input" type="text" id="join-name-input" placeholder="Your name" autocomplete="name" />
+    </div>
+    <div class="join-field-group">
+      <label class="join-field-label" for="join-phone-input">Phone number</label>
+      <input class="join-field-input" type="tel" id="join-phone-input" placeholder="e.g. 012-3456789" inputmode="tel" autocomplete="tel" />
+    </div>
+
+    <button class="join-sheet-submit" id="join-sheet-submit" type="button">Join</button>
+    <button class="join-sheet-cancel" id="join-sheet-cancel" type="button">Cancel</button>
   </div>
 </div>
 
@@ -850,50 +991,180 @@
 
   // ---------- Join game ----------
   // This page is what a recipient lands on after opening a link shared via
-  // game-details.html's "Share game" button. Fills the next open avatar
-  // slot (or, once full, adds to the waiting list) — client-side only,
-  // since these are static prototype pages with no backend to persist to.
+  // game-details.html's "Share game" button. Clicking Join opens a sheet
+  // asking for Name + Phone number; submitting fills the next open avatar
+  // slot (or, once full, adds to the waiting list) and flips the CTA to
+  // "Leave game".
+  //
+  // NOTE on duplicate-join detection: these are static prototype pages
+  // with no backend/database, so there's no shared place to look up
+  // "has this phone number already joined from a different device".
+  // What IS implemented is same-device detection via localStorage, keyed
+  // per-game (derived from the URL's data payload) — reopening this exact
+  // link on the same device/browser correctly shows "Leave game" instead
+  // of letting you join twice. Cross-device duplicate-phone checking would
+  // require a real server to be accurate.
   (function(){
     var btn = document.getElementById('join-btn');
-    if (!btn) return;
+    var overlay = document.getElementById('join-sheet-overlay');
+    var backdrop = document.getElementById('join-sheet-backdrop');
+    var cancelBtn = document.getElementById('join-sheet-cancel');
+    var submitBtn = document.getElementById('join-sheet-submit');
+    var nameInput = document.getElementById('join-name-input');
+    var phoneInput = document.getElementById('join-phone-input');
 
-    var joined = false;
+    if (!btn || !overlay) return;
 
-    btn.addEventListener('click', function(){
-      if (joined) return;
-      joined = true;
+    function hashString(str){
+      var hash = 0;
+      for (var i = 0; i < str.length; i++){
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return String(hash);
+    }
+    var storageKey = 'pt_join_' + hashString(window.location.search || 'default');
 
+    function getJoinRecord(){
+      try {
+        var raw = localStorage.getItem(storageKey);
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+
+    function setJoinRecord(record){
+      try { localStorage.setItem(storageKey, JSON.stringify(record)); } catch (e) {}
+    }
+
+    function clearJoinRecord(){
+      try { localStorage.removeItem(storageKey); } catch (e) {}
+    }
+
+    function openSheet(){
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      nameInput.focus();
+    }
+
+    function closeSheet(){
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    function bumpJoinedCount(delta){
+      var joinedHeaderEl = document.getElementById('joined-header');
+      var match = joinedHeaderEl && joinedHeaderEl.textContent.match(/(\d+)\s*\/\s*(\d+)/);
+      if (!match) return;
+      var next = Math.max(0, parseInt(match[1], 10) + delta);
+      joinedHeaderEl.textContent = 'Joined ( ' + next + '/' + match[2] + ')';
+    }
+
+    function bumpWaitingCount(delta){
+      var waitingHeaderEl = document.getElementById('waiting-header');
+      var match = waitingHeaderEl && waitingHeaderEl.textContent.match(/\((\d+)\)/);
+      var next = Math.max(0, (match ? parseInt(match[1], 10) : 0) + delta);
+      if (waitingHeaderEl) waitingHeaderEl.textContent = 'Waiting list (' + next + ')';
+    }
+
+    function fillNextSlot(name){
       var grid = document.getElementById('avatar-grid');
       var emptyCircle = grid ? grid.querySelector('.avatar-circle.is-empty') : null;
+      if (!emptyCircle) return null;
 
-      if (emptyCircle){
-        emptyCircle.classList.remove('is-empty');
-        emptyCircle.textContent = 'You';
+      emptyCircle.classList.remove('is-empty');
+      emptyCircle.dataset.selfJoined = 'true';
+      emptyCircle.textContent = name.charAt(0).toUpperCase();
 
-        var name = document.createElement('div');
-        name.className = 'avatar-name';
-        name.textContent = 'You';
-        emptyCircle.parentElement.appendChild(name);
+      var nameEl = document.createElement('div');
+      nameEl.className = 'avatar-name';
+      nameEl.textContent = name;
+      emptyCircle.parentElement.appendChild(nameEl);
 
-        var joinedHeaderEl = document.getElementById('joined-header');
-        var match = joinedHeaderEl && joinedHeaderEl.textContent.match(/(\d+)\s*\/\s*(\d+)/);
-        if (match){
-          var current = parseInt(match[1], 10) + 1;
-          joinedHeaderEl.textContent = 'Joined ( ' + current + '/' + match[2] + ')';
+      return emptyCircle;
+    }
+
+    function removeSelfSlot(){
+      var grid = document.getElementById('avatar-grid');
+      var selfCircle = grid ? grid.querySelector('[data-self-joined="true"]') : null;
+      if (!selfCircle) return;
+      var slot = selfCircle.parentElement;
+      grid.removeChild(slot);
+
+      // Add a fresh empty slot back so the total slot count stays correct.
+      var newSlot = document.createElement('div');
+      newSlot.className = 'avatar-slot';
+      var newCircle = document.createElement('div');
+      newCircle.className = 'avatar-circle is-empty';
+      newSlot.appendChild(newCircle);
+      grid.appendChild(newSlot);
+    }
+
+    btn.addEventListener('click', function(){
+      var record = getJoinRecord();
+
+      if (record){
+        // Leave.
+        if (record.waiting){
+          bumpWaitingCount(-1);
+        } else {
+          removeSelfSlot();
+          bumpJoinedCount(-1);
         }
-
-        btn.textContent = "You're in!";
-      } else {
-        var waitingHeaderEl = document.getElementById('waiting-header');
-        var wMatch = waitingHeaderEl && waitingHeaderEl.textContent.match(/\((\d+)\)/);
-        var wCount = (wMatch ? parseInt(wMatch[1], 10) : 0) + 1;
-        if (waitingHeaderEl) waitingHeaderEl.textContent = 'Waiting list (' + wCount + ')';
-
-        btn.textContent = "You're on the waiting list";
+        clearJoinRecord();
+        btn.textContent = 'Join';
+        return;
       }
 
-      btn.disabled = true;
+      openSheet();
     });
+
+    backdrop.addEventListener('click', closeSheet);
+    cancelBtn.addEventListener('click', closeSheet);
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeSheet();
+    });
+
+    submitBtn.addEventListener('click', function(){
+      var name = nameInput.value.trim();
+      var phone = phoneInput.value.trim();
+
+      nameInput.classList.toggle('is-invalid', !name);
+      phoneInput.classList.toggle('is-invalid', !phone);
+      if (!name || !phone) return;
+
+      var slot = fillNextSlot(name);
+      if (slot){
+        bumpJoinedCount(1);
+        setJoinRecord({ name: name, phone: phone, joinedAt: Date.now() });
+        btn.textContent = 'Leave game';
+      } else {
+        bumpWaitingCount(1);
+        setJoinRecord({ name: name, phone: phone, joinedAt: Date.now(), waiting: true });
+        btn.textContent = 'Leave waiting list';
+      }
+
+      nameInput.value = '';
+      phoneInput.value = '';
+      nameInput.classList.remove('is-invalid');
+      phoneInput.classList.remove('is-invalid');
+      closeSheet();
+    });
+
+    // On load: if this device already has a join record for this exact
+    // game link, reflect that immediately instead of showing "Join".
+    var existing = getJoinRecord();
+    if (existing){
+      if (existing.waiting){
+        btn.textContent = 'Leave waiting list';
+      } else {
+        fillNextSlot(existing.name);
+        bumpJoinedCount(1);
+        btn.textContent = 'Leave game';
+      }
+    }
   })();
 </script>
 

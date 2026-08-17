@@ -608,6 +608,12 @@
     opacity: 0.85;
   }
 
+  .share-copy-btn:disabled,
+  .share-native-btn:disabled{
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .share-native-btn{
     width: 100%;
     margin-bottom: var(--space-3);
@@ -995,14 +1001,24 @@
   // share sheet when available. This page itself is the creator's own
   // view and shouldn't be what invited players land on.
   //
-  // The link is built to be much shorter than the raw "?data=<JSON>" this
-  // page itself was opened with: object keys are minified (title -> t,
-  // venue -> v, etc.) and the JSON is base64url-encoded instead of
-  // percent-encoded (JSON's quotes/braces/commas each cost 3 characters
-  // under encodeURIComponent — %22, %7B, %2C — but are single bytes under
-  // base64). A readable slug of the game title is included as a separate
-  // "n" param purely so the URL is recognizable at a glance; it isn't
-  // read back by game-title.html.
+  // SHORT LINK: this is a static site (GitHub Pages, no backend/database),
+  // so a URL that contains no game data at all — just "?w=<title-slug>&
+  // d=<date-slug>" — only works if the full record is stored somewhere
+  // else that any device can read at runtime. We PUT the full game data to
+  // kvdb.io (a free, anonymous, CORS-enabled key-value store — no login,
+  // no server of our own to run) keyed by "<w>_<d>", and game-title.html
+  // GETs it back by rebuilding that same key from its own w/d params.
+  // Free-tier caveats (disclosed to the user): keys expire after ~3
+  // months of inactivity, and the bucket ID below is effectively public
+  // (visible in this page's source) — fine for a low-stakes prototype,
+  // not for sensitive data.
+  //
+  // FALLBACK: if the kvdb.io write fails (offline, rate-limited, service
+  // down) we fall back to the older, fully self-contained long link
+  // (object keys minified — title -> t, venue -> v, etc. — and the JSON
+  // base64url-encoded into "g="), so sharing never just breaks. That
+  // long-link format is also what game-title.html still accepts for any
+  // previously-generated links (see readGameDataFromUrl there).
   (function(){
     var btn = document.getElementById('share-game-btn');
     var overlay = document.getElementById('share-sheet-overlay');
@@ -1013,6 +1029,9 @@
     var nativeBtn = document.getElementById('share-native-btn');
 
     if (!btn || !overlay) return;
+
+    var KVDB_BUCKET = 'RWBfo6rsydaPgXsuNFmkx3';
+    var KVDB_BASE = 'https://kvdb.io/' + KVDB_BUCKET + '/';
 
     var SHORT_KEYS = {
       title: 't', date: 'd', timeStart: 'ts', timeEnd: 'te', venue: 'v',
@@ -1045,27 +1064,32 @@
       return maxLen ? slug.slice(0, maxLen) : slug;
     }
 
-    function getShareUrl(){
+    function getGameData(){
       var raw = new URLSearchParams(window.location.search).get('data');
       var data = {};
       if (raw){
         try { data = JSON.parse(raw); } catch (e) { data = {}; }
       }
+      return data;
+    }
 
-      // The readable "n" slug reflects what the admin actually filled in
-      // on index.html — game title AND date — so the link itself is
-      // recognizable at a glance, not just the opaque "g" payload. The
-      // title is length-capped and the weekday is dropped from the date
-      // (e.g. "Fri, 21 Aug 2026" -> "21 Aug 2026") so the slug stays short
-      // and always ends cleanly at the date, instead of trailing off with
-      // redundant text.
+    // Title is length-capped and the weekday is dropped from the date
+    // (e.g. "Fri, 21 Aug 2026" -> "21 Aug 2026") so the slug stays short
+    // and always ends cleanly at the date, instead of trailing off with
+    // redundant text.
+    function getSlugParts(data){
       var titleEl = document.querySelector('.game-title');
       var title = titleEl ? titleEl.textContent : (data.title || '');
       var dateOnly = (data.date || '').replace(/^[A-Za-z]+,\s*/, '');
+      return {
+        w: slugify(title, 30) || 'game',
+        d: slugify(dateOnly)
+      };
+    }
 
-      var titleSlug = slugify(title, 30);
-      var dateSlug = slugify(dateOnly);
-      var slug = [titleSlug, dateSlug].filter(Boolean).join('-') || 'game';
+    function getLongShareUrl(data){
+      var parts = getSlugParts(data);
+      var slug = [parts.w, parts.d].filter(Boolean).join('-') || 'game';
 
       var joinUrl = new URL('game-title.html', window.location.href);
       joinUrl.searchParams.set('n', slug);
@@ -1073,20 +1097,55 @@
       return joinUrl.toString();
     }
 
-    function getShareData(){
+    // Resolves to the short "?w=&d=" URL if the kvdb.io write succeeds,
+    // otherwise falls back to the long self-contained URL.
+    function getShortShareUrl(data){
+      var parts = getSlugParts(data);
+      var key = parts.w + '_' + parts.d;
+
+      return fetch(KVDB_BASE + encodeURIComponent(key), {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      }).then(function(res){
+        if (!res.ok) throw new Error('kvdb.io write failed: ' + res.status);
+        var joinUrl = new URL('game-title.html', window.location.href);
+        joinUrl.searchParams.set('w', parts.w);
+        joinUrl.searchParams.set('d', parts.d);
+        return joinUrl.toString();
+      }).catch(function(err){
+        console.warn('Short link storage failed, falling back to long link.', err);
+        return getLongShareUrl(data);
+      });
+    }
+
+    function getShareData(url){
       var titleEl = document.querySelector('.game-title');
       return {
         title: titleEl ? titleEl.textContent : 'Play Together',
         text: 'Join this game on Play Together!',
-        url: getShareUrl()
+        url: url
       };
     }
 
+    var currentShareUrl = '';
+
+    function setBusy(busy){
+      copyBtn.disabled = busy;
+      nativeBtn.disabled = busy;
+    }
+
     function openSheet(){
-      linkTextEl.textContent = getShareUrl();
+      linkTextEl.textContent = 'Generating link…';
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      setBusy(true);
+
+      getShortShareUrl(getGameData()).then(function(url){
+        currentShareUrl = url;
+        linkTextEl.textContent = url;
+        setBusy(false);
+      });
     }
 
     function closeSheet(){
@@ -1105,8 +1164,9 @@
 
     var copyOriginalLabel = copyBtn.textContent;
     copyBtn.addEventListener('click', function(){
+      if (!currentShareUrl) return;
       if (!(navigator.clipboard && navigator.clipboard.writeText)) return;
-      navigator.clipboard.writeText(linkTextEl.textContent)
+      navigator.clipboard.writeText(currentShareUrl)
         .then(function(){
           copyBtn.textContent = 'Copied!';
           setTimeout(function(){ copyBtn.textContent = copyOriginalLabel; }, 1500);
@@ -1116,7 +1176,8 @@
 
     if (navigator.share){
       nativeBtn.addEventListener('click', function(){
-        navigator.share(getShareData()).catch(function(){});
+        if (!currentShareUrl) return;
+        navigator.share(getShareData(currentShareUrl)).catch(function(){});
       });
     } else {
       nativeBtn.style.display = 'none';

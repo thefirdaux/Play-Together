@@ -807,13 +807,31 @@
 
 <script>
   // ---------- Read game data from the URL ----------
-  // game-details.html's Share game button links here with a short, compact
-  // "g" param: object keys minified (title -> t, venue -> v, etc.) and the
-  // JSON base64url-encoded instead of percent-encoded, since JSON's quotes/
-  // braces/commas each cost 3 characters under encodeURIComponent but are
-  // single bytes under base64. The old full "data" param (raw JSON, used
-  // by index.html's own handoff to game-details.html) is still supported
-  // as a fallback for robustness.
+  // Three link formats are supported, checked in this order:
+  //
+  // 1. "?w=<title-slug>&d=<date-slug>" (current format) — the URL itself
+  //    carries no game data, just two short identifiers. The full record
+  //    is fetched from kvdb.io (a free, anonymous, CORS-enabled key-value
+  //    store) at "<bucket>/<w>_<d>", where game-details.html's Share
+  //    button PUT it at share-time. This is what makes a short, clean,
+  //    same-domain link possible on a static host with no backend of our
+  //    own — see the comment above the Share game script in
+  //    game-details.html for the full rationale and free-tier caveats
+  //    (~3 month key expiry, etc).
+  // 2. "?g=<compact base64url JSON>" (previous format) — object keys
+  //    minified (title -> t, venue -> v, etc.), fully self-contained, no
+  //    network call needed. Still supported so older share links keep
+  //    working even after they aged past kvdb.io's retention window, or
+  //    if kvdb.io is ever unreachable.
+  // 3. "?data=<raw JSON>" (original format, still used by index.html's
+  //    own handoff to game-details.html) — kept as a last-resort fallback.
+  //
+  // Resolves to {} (rather than throwing/rejecting) when nothing usable
+  // is found, so the avatar grid below still gets populated with default
+  // empty slots instead of the Join flow silently breaking.
+  var KVDB_BUCKET = 'RWBfo6rsydaPgXsuNFmkx3';
+  var KVDB_BASE = 'https://kvdb.io/' + KVDB_BUCKET + '/';
+
   var SHORT_KEYS_REVERSE = {
     t: 'title', d: 'date', ts: 'timeStart', te: 'timeEnd', v: 'venue',
     ml: 'mapsLink', wl: 'wazeLink', cc: 'courtCount', cn: 'courtNumbers',
@@ -836,31 +854,44 @@
     return data;
   }
 
-  // Falls back to an empty object (rather than throwing/bailing) when
-  // there's no usable param or it fails to decode, so the avatar grid
-  // still gets populated with default empty slots. Without this, opening
-  // the page with a missing/broken link would leave the grid with zero
-  // slots — silently breaking the Join flow (it would always fall through
-  // to the waiting list, since there'd be no empty slot to fill).
   function readGameDataFromUrl(){
     var params = new URLSearchParams(window.location.search);
 
+    var w = params.get('w');
+    var d = params.get('d');
+    if (w && d){
+      var key = w + '_' + d;
+      return fetch(KVDB_BASE + encodeURIComponent(key))
+        .then(function(res){
+          if (!res.ok) throw new Error('kvdb.io lookup failed: ' + res.status);
+          return res.json();
+        })
+        .catch(function(err){
+          console.warn('Short-link game data lookup failed (link may have expired).', err);
+          return {};
+        });
+    }
+
     var compact = params.get('g');
     if (compact){
-      try { return decodeCompactGameData(compact); } catch (e) { /* fall through */ }
+      try { return Promise.resolve(decodeCompactGameData(compact)); } catch (e) { /* fall through */ }
     }
 
     var legacy = params.get('data');
     if (legacy){
-      try { return JSON.parse(legacy); } catch (e) { /* fall through */ }
+      try { return Promise.resolve(JSON.parse(legacy)); } catch (e) { /* fall through */ }
     }
 
-    return {};
+    return Promise.resolve({});
   }
 
+  // Fetched once and shared by every IIFE below that needs game data, so
+  // a "w"/"d" link only costs a single kvdb.io read regardless of how
+  // many parts of the page use it.
+  var gameDataPromise = readGameDataFromUrl();
+
   // ---------- Populate from Create list page ----------
-  (function(){
-    var data = readGameDataFromUrl();
+  gameDataPromise.then(function(data){
 
     function joinWithAnd(list){
       if (list.length === 0) return '';
@@ -960,7 +991,7 @@
       slot.appendChild(circle);
       grid.appendChild(slot);
     }
-  })();
+  });
 
   // ---------- Navigate options bottom sheet ----------
   // The Navigate icon on the Venue row opens a sheet letting the user pick
@@ -976,7 +1007,7 @@
 
     if (!trigger || !overlay) return;
 
-    var data = readGameDataFromUrl();
+    gameDataPromise.then(function(data){
 
     var mapsLink = (data.mapsLink || '').trim();
     var wazeLink = (data.wazeLink || '').trim();
@@ -1023,6 +1054,7 @@
       if (!wazeLink) return;
       window.open(wazeLink, '_blank', 'noopener');
       closeSheet();
+    });
     });
   })();
 
@@ -1191,17 +1223,24 @@
     });
 
     // On load: if this device already has a join record for this exact
-    // game link, reflect that immediately instead of showing "Join".
-    var existing = getJoinRecord();
-    if (existing){
-      if (existing.waiting){
-        btn.textContent = 'Leave waiting list';
-      } else {
-        fillNextSlot(existing.name);
-        bumpJoinedCount(1);
-        btn.textContent = 'Leave game';
+    // game link, reflect that immediately instead of showing "Join". This
+    // has to wait for gameDataPromise (chained after the populate and
+    // nav-sheet handlers above, so it runs once the avatar grid actually
+    // has slots) — filling a slot before the grid is populated would
+    // silently no-op, and the joined count would get overwritten back to
+    // 0 once the real data loads.
+    gameDataPromise.then(function(){
+      var existing = getJoinRecord();
+      if (existing){
+        if (existing.waiting){
+          btn.textContent = 'Leave waiting list';
+        } else {
+          fillNextSlot(existing.name);
+          bumpJoinedCount(1);
+          btn.textContent = 'Leave game';
+        }
       }
-    }
+    });
   })();
 </script>
 

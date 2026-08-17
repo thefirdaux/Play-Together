@@ -4,6 +4,36 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Play Together — Game Title</title>
+
+<!-- Open Graph / Twitter Card ----------------------------------------
+     IMPORTANT: these tags are intentionally STATIC, not per-game.
+     WhatsApp/Facebook/etc. crawlers fetch this file's raw HTML and read
+     only what's already in <head> — they do not execute the JavaScript
+     below that fetches the real game data (from kvdb.io, based on the
+     ?w=&d= in the URL) and fills in the page. Since GitHub Pages serves
+     the exact same file bytes for every "?w=...&d=..." query string,
+     there's no way to bake the actual game's title/date/venue into
+     these tags without a server that renders a response per request —
+     which this project intentionally doesn't have. So instead of a
+     generic "Play Together" title with no context, this is a polished,
+     honestly-generic "you have a game invite" preview that's correct
+     for every shared link, rather than a fake/misleading one showing
+     placeholder game details. See the Share code in game-details.html
+     and the comment in this file's <script> for the full picture. -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Play Together" />
+<meta property="og:title" content="🏸 You're invited to a Play Together game!" />
+<meta property="og:description" content="Tap to see the date, time, venue, price, and join the game." />
+<meta property="og:image" content="https://thefirdaux.github.io/Play-Together/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:url" content="https://thefirdaux.github.io/Play-Together/game-title.html" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="🏸 You're invited to a Play Together game!" />
+<meta name="twitter:description" content="Tap to see the date, time, venue, price, and join the game." />
+<meta name="twitter:image" content="https://thefirdaux.github.io/Play-Together/og-image.png" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">

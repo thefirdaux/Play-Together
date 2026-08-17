@@ -1037,12 +1037,12 @@
       return toBase64Url(JSON.stringify(compact));
     }
 
-    function slugify(text){
-      return (text || '')
+    function slugify(text, maxLen){
+      var slug = (text || '')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 60);
+        .replace(/^-+|-+$/g, '');
+      return maxLen ? slug.slice(0, maxLen) : slug;
     }
 
     function getShareUrl(){
@@ -1054,11 +1054,18 @@
 
       // The readable "n" slug reflects what the admin actually filled in
       // on index.html — game title AND date — so the link itself is
-      // recognizable at a glance, not just the opaque "g" payload.
+      // recognizable at a glance, not just the opaque "g" payload. The
+      // title is length-capped and the weekday is dropped from the date
+      // (e.g. "Fri, 21 Aug 2026" -> "21 Aug 2026") so the slug stays short
+      // and always ends cleanly at the date, instead of trailing off with
+      // redundant text.
       var titleEl = document.querySelector('.game-title');
       var title = titleEl ? titleEl.textContent : (data.title || '');
-      var slugSource = [title, data.date].filter(Boolean).join(' ');
-      var slug = slugify(slugSource) || 'game';
+      var dateOnly = (data.date || '').replace(/^[A-Za-z]+,\s*/, '');
+
+      var titleSlug = slugify(title, 30);
+      var dateSlug = slugify(dateOnly);
+      var slug = [titleSlug, dateSlug].filter(Boolean).join('-') || 'game';
 
       var joinUrl = new URL('game-title.html', window.location.href);
       joinUrl.searchParams.set('n', slug);

@@ -1,0 +1,2603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Play Together — Create Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-bg: #E7E7E7;
+    --color-surface: #FFFFFF;
+    --color-ink: #171717;
+    --color-ink-soft: #6B6B6B;
+    --color-placeholder: #A3A3A3;
+    --color-border: #E5E5E5;
+    --color-primary: #153320;
+    --color-accent: #D6E84B;
+    --color-accent-soft: #C9D8B8;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
+
+    --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+
+    --fs-h1: 30px;
+    --fs-h2: 15px;
+    --fs-body: 15px;
+    --fs-small: 13px;
+    --fs-caption: 12px;
+
+    --frame-min: 393px;
+    --frame-max: 700px;
+
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-cta: 0 -8px 24px rgba(0,0,0,0.06);
+
+    --toggle-width: 64px;
+    --toggle-height: 28px;
+    --toggle-radius: 99px;
+    --toggle-thumb-w: 39px;
+    --toggle-thumb-h: 24px;
+    --toggle-track-off: #D9D9D9;
+    --toggle-track-on: #143522;
+    --toggle-thumb-color: #FFFFFF;
+    --toggle-thumb-inset: 2px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+    font-family: var(--font-body);
+    color: var(--color-ink);
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+    touch-action: pan-y;
+  }
+
+  /* ==========================================================
+     Typography System — SF Pro
+     ========================================================== */
+  .type-large-title{
+    font-family: var(--font-sf);
+    font-weight: 400;
+    font-size: 34px;
+    line-height: 41px;
+    letter-spacing: 0.4px;
+    margin: 0;
+  }
+  .type-large-title-emph{
+    font-family: var(--font-sf);
+    font-weight: 700;
+    font-size: 34px;
+    line-height: 41px;
+    letter-spacing: 0.4px;
+    margin: 0;
+  }
+  .type-title1{
+    font-family: var(--font-sf);
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 34px;
+    letter-spacing: 0.38px;
+    margin: 0;
+  }
+  .type-title1-emph{
+    font-family: var(--font-sf);
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 34px;
+    letter-spacing: 0.38px;
+    margin: 0;
+  }
+  .type-title2{
+    font-family: var(--font-sf);
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 28px;
+    letter-spacing: -0.26px;
+    margin: 0;
+  }
+  .type-title2-emph{
+    font-family: var(--font-sf);
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 28px;
+    letter-spacing: -0.26px;
+    margin: 0;
+  }
+  .type-title3{
+    font-family: var(--font-sf);
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 25px;
+    letter-spacing: -0.45px;
+    margin: 0;
+  }
+  .type-title3-emph{
+    font-family: var(--font-sf);
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 25px;
+    letter-spacing: -0.45px;
+    margin: 0;
+  }
+  .type-headline{
+    font-family: var(--font-sf);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 22px;
+    letter-spacing: -0.43px;
+    margin: 0;
+  }
+
+  body{
+    display: flex;
+    justify-content: center;
+    min-width: var(--frame-min);
+  }
+
+  .frame{
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    background: var(--color-bg);
+    position: relative;
+    padding-bottom: 120px;
+  }
+
+  /* ---------- Header ---------- */
+  .header{
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-8) var(--space-5) var(--space-2);
+  }
+
+  .logo-badge{
+    width: 40px;
+    height: 40px;
+    border-radius: 6.4px;
+    background: #E4FF3A;
+    border: 0.4px solid #000000;
+    color: #143622;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', var(--font-display);
+    font-weight: 700;
+    font-size: 25.6px;
+    line-height: normal;
+    flex-shrink: 0;
+    min-height: 0;
+  }
+
+  .brand-name{
+    font-weight: 800;
+    font-size: 18px;
+    text-align: left;
+    font-family: var(--font-display);
+  }
+
+  /* ---------- Hero / Title ---------- */
+  .hero{
+    padding: var(--space-4) var(--space-5) 0;
+  }
+
+  .hero h1{
+    margin: 0;
+  }
+
+  .hero p{
+    margin: var(--space-3) 0 0;
+    font-size: var(--fs-small);
+    line-height: 1.55;
+    color: var(--color-ink-soft);
+  }
+
+  /* ---------- Section ---------- */
+  .section{
+    padding: var(--space-7) var(--space-5) 0;
+  }
+
+  .section-label{
+    font-size: var(--fs-h2);
+    font-weight: 700;
+    margin: 0 0 var(--space-3);
+  }
+
+  .section-hint{
+    font-size: var(--fs-caption);
+    color: var(--color-ink-soft);
+    margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+  }
+
+  .field-hint{
+    margin: var(--space-2) 0 0;
+    padding: 0 var(--space-1);
+    font-size: var(--fs-caption);
+    color: var(--color-ink-soft);
+  }
+
+  .card{
+    background: var(--color-surface);
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+    padding: 0;
+  }
+
+  .card.padded{
+    padding: var(--space-2) 0;
+  }
+
+  .field-group > *:not(:last-child),
+  .row-group > *:not(:last-child){
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .field-group > *:first-child,
+  .row-group > *:first-child{
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  .field-group > *:last-child,
+  .row-group > *:last-child{
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  .field{
+    width: 100%;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: var(--font-body);
+    font-size: var(--fs-body);
+    color: var(--color-ink);
+    padding: var(--space-4);
+  }
+
+  .field::placeholder{
+    color: var(--color-placeholder);
+  }
+
+  .field.is-invalid::placeholder{
+    color: #C0392B;
+  }
+
+  .field-with-action{
+    display: flex;
+    align-items: center;
+  }
+
+  .field-with-action .field{
+    flex: 1;
+    min-width: 0;
+  }
+
+  .field-action-btn{
+    flex-shrink: 0;
+    margin-right: var(--space-4);
+    padding: 6px 16px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-body);
+    font-size: var(--fs-caption);
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .field-action-btn:active{
+    opacity: 0.85;
+  }
+
+  textarea.field{
+    resize: none;
+    min-height: 88px;
+    padding-top: var(--space-4);
+    overflow: hidden;
+  }
+
+  .datetime-field{
+    height: 52px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .split-row{
+    display: flex;
+  }
+
+  .split-row > .split-item{
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 52px;
+    padding: 0 var(--space-4);
+  }
+
+  .split-row > .split-item .datetime-field{
+    padding: 0;
+  }
+
+  .split-row > .split-item:first-child{
+    border-right: 1px solid var(--color-border);
+  }
+
+  /* ---------- Time Picker Bottom Sheet ---------- */
+  .time-sheet-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    justify-content: center;
+  }
+
+  .time-sheet-overlay.open{
+    display: flex;
+  }
+
+  .time-sheet-backdrop{
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .time-sheet-overlay.open .time-sheet-backdrop{
+    opacity: 1;
+  }
+
+  .time-sheet{
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    background: var(--color-surface);
+    border-radius: 20px 20px 0 0;
+    padding: var(--space-3) var(--space-5) var(--space-6);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.16);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .time-sheet-overlay.open .time-sheet{
+    transform: translateY(0);
+  }
+
+  .time-sheet-handle{
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--color-border);
+    margin: 0 auto var(--space-3);
+  }
+
+  .time-sheet-title{
+    text-align: center;
+    font-size: var(--fs-body);
+    font-weight: 700;
+    color: var(--color-ink);
+    margin-bottom: var(--space-4);
+  }
+
+  .time-wheels{
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 200px;
+  }
+
+  .time-wheels-highlight{
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 40px;
+    transform: translateY(-50%);
+    background: #F5F5F5;
+    border-radius: var(--radius-sm);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .time-wheel{
+    position: relative;
+    z-index: 1;
+    width: 64px;
+    height: 200px;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 80px 0;
+  }
+
+  .time-wheel::-webkit-scrollbar{
+    display: none;
+  }
+
+  .time-wheel-item{
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    scroll-snap-align: center;
+    font-size: 17px;
+    color: #C9C9C9;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: color 0.15s ease, font-weight 0.15s ease;
+  }
+
+  .time-wheel-item.selected{
+    color: var(--color-ink);
+    font-weight: 700;
+    font-size: 19px;
+  }
+
+  .time-wheel-colon{
+    position: relative;
+    z-index: 1;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--color-ink);
+    padding-bottom: 2px;
+  }
+
+  .time-sheet-done{
+    width: 100%;
+    margin-top: var(--space-5);
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .icon{
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--color-placeholder);
+  }
+
+  /* ---------- Card Overlay (shared centered-card modal component) ----------
+     Used by every "card" overlay on this page (Court Number, Price, …) so
+     they all share one visual style. Content below the shared chrome
+     (.card-modal-overlay/-backdrop/-card/-title/-desc/-done) is
+     modal-specific (e.g. .court-modal-list, .price-modal-rows). */
+  .card-modal-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0 var(--space-5);
+  }
+
+  .card-modal-overlay.open{
+    display: flex;
+  }
+
+  .card-modal-backdrop{
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .card-modal-overlay.open .card-modal-backdrop{
+    opacity: 1;
+  }
+
+  .card-modal-card{
+    position: relative;
+    width: 100%;
+    max-width: calc(var(--frame-max) - (var(--space-5) * 2));
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    padding: var(--space-6) var(--space-5) var(--space-5);
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+
+  .card-modal-overlay.open .card-modal-card{
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .card-modal-title{
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 24px;
+    line-height: 1.2;
+    margin: 0 0 var(--space-2);
+    color: var(--color-ink);
+  }
+
+  .card-modal-desc{
+    font-size: var(--fs-body);
+    color: var(--color-ink);
+    margin: 0 0 var(--space-4);
+  }
+
+  .card-modal-done{
+    width: 100%;
+    margin-top: var(--space-5);
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ---------- Court Number Modal content (inside .card-modal-card) ---------- */
+  .court-modal-list{
+    max-height: 224px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .court-modal-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    flex-shrink: 0;
+  }
+
+  .court-modal-row:not(:last-child){
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .court-modal-row-label{
+    font-size: var(--fs-body);
+    color: var(--color-ink);
+  }
+
+  .court-modal-input{
+    width: 64px;
+    height: 34px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: #F0F0F0;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: var(--fs-small);
+    color: var(--color-ink);
+    outline: none;
+  }
+
+  .court-modal-input:focus{
+    border-color: var(--color-ink);
+  }
+
+  .court-modal-input::placeholder{
+    color: var(--color-placeholder);
+  }
+
+  /* ---------- Price Modal content (inside .card-modal-card) ---------- */
+  .price-modal-rows{
+    display: flex;
+    flex-direction: column;
+  }
+
+  .price-row-divider{
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .price-amount{
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .price-amount-currency{
+    font-size: var(--fs-body);
+    color: var(--color-ink);
+  }
+
+  .price-amount-input{
+    width: 64px;
+    height: 34px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: transparent;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: var(--fs-small);
+    color: var(--color-ink);
+    outline: none;
+  }
+
+  .price-amount-input:focus{
+    border-color: var(--color-ink);
+  }
+
+  .price-amount-input::placeholder{
+    color: var(--color-placeholder);
+  }
+
+  .currency-chip{
+    position: relative;
+  }
+
+  .currency-chip .chip-icon{
+    margin-left: auto;
+    pointer-events: none;
+  }
+
+  .currency-select{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--color-ink);
+    padding: 0 4px 0 10px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ---------- Row (settings-style) ---------- */
+  .row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    width: 100%;
+    background: none;
+    border: none;
+    font-family: var(--font-body);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .row-label{
+    font-size: var(--fs-body);
+    color: var(--color-ink);
+  }
+
+  .row-text .row-label{ display:block; }
+  .row-sub{
+    font-size: var(--fs-small);
+    color: var(--color-placeholder);
+    margin-top: 2px;
+  }
+
+  .row--court-count{
+    max-height: 52px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+
+  .chip{
+    width: 64px;
+    height: 34px;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    border: 1px solid #E5E5E5;
+    border-radius: 4px;
+    padding: 0 4px 0 10px;
+    background: transparent;
+    font-family: var(--font-body);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .chip span{
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--color-ink);
+  }
+
+  .chip-icon{
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--color-placeholder);
+  }
+
+  /* ---------- Date Dropdown / Calendar ----------
+     Panel is positioned absolutely so it floats above the layout
+     (ignores auto-layout / does not push sibling rows). */
+  .date-dropdown{
+    position: relative;
+    width: 100%;
+  }
+
+  .date-trigger{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+
+  .date-trigger-value{
+    color: var(--color-ink);
+  }
+
+  .date-trigger-value.is-placeholder{
+    color: var(--color-placeholder);
+  }
+
+  .date-chevron{
+    color: var(--color-placeholder);
+    transition: transform 0.2s ease;
+  }
+
+  .date-trigger[aria-expanded="true"] .date-chevron{
+    transform: rotate(180deg);
+  }
+
+  .date-dropdown-panel{
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 20;
+    background: var(--color-surface);
+    border: 1px solid #E5E5E5;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: var(--space-4);
+    display: none;
+    box-sizing: border-box;
+  }
+
+  .date-dropdown-panel.open{
+    display: block;
+  }
+
+  .date-panel-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+  }
+
+  .date-panel-month{
+    font-size: var(--fs-body);
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+
+  .date-nav-btn{
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-ink);
+    cursor: pointer;
+    padding: 0;
+    min-height: 28px;
+  }
+
+  .date-nav-btn svg{
+    width: 16px;
+    height: 16px;
+  }
+
+  .date-nav-btn:disabled{
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .date-weekdays{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: var(--space-1);
+  }
+
+  .date-weekdays span{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin: 0 auto;
+    font-size: var(--fs-caption);
+    color: var(--color-placeholder);
+    font-weight: 600;
+  }
+
+  .date-grid{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 4px;
+    justify-items: center;
+  }
+
+  .date-cell{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: var(--fs-small);
+    color: var(--color-ink);
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+  }
+
+  .date-cell:hover:not(:disabled):not(.date-cell--empty){
+    background: #F2F2F2;
+  }
+
+  .date-cell--today{
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+  }
+
+  .date-cell.selected{
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+
+  .date-cell:disabled{
+    color: #C9C9C9;
+    cursor: not-allowed;
+  }
+
+  .date-cell--empty{
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* ---------- Toggle ---------- */
+  .toggle{
+    position: relative;
+    width: var(--toggle-width);
+    height: var(--toggle-height);
+    min-height: var(--toggle-height);
+    border-radius: var(--toggle-radius);
+    background: var(--toggle-track-off);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.2s ease;
+  }
+
+  /* Expanded invisible hit area for comfortable mobile tapping,
+     without changing the visual 64x28 size of the toggle. */
+  .toggle::before{
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+  }
+
+  .toggle::after{
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: var(--toggle-thumb-inset);
+    width: var(--toggle-thumb-w);
+    height: var(--toggle-thumb-h);
+    border-radius: 99px;
+    background: var(--toggle-thumb-color);
+    transform: translateY(-50%) translateX(0);
+    transition: transform 0.2s ease;
+  }
+
+  .toggle[aria-pressed="true"]{
+    background: var(--toggle-track-on);
+  }
+
+  .toggle[aria-pressed="true"]::after{
+    transform: translateY(-50%) translateX(calc(var(--toggle-width) - var(--toggle-thumb-w) - (var(--toggle-thumb-inset) * 2)));
+  }
+
+  /* ---------- Stepper ---------- */
+  .stepper{
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  /* ---------- Participants (typed number + court-based suggestion) ---------- */
+  .participants-field{
+    display: flex;
+    flex-direction: column;
+  }
+
+  .participants-input::-webkit-outer-spin-button,
+  .participants-input::-webkit-inner-spin-button{
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .participants-input{
+    -moz-appearance: textfield;
+  }
+
+  .participants-suggestion-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: 8px;
+  }
+
+  .participants-suggestion-text{
+    font-size: var(--fs-caption);
+    color: var(--color-ink-soft);
+    line-height: 1.5;
+  }
+
+  .participants-suggestion-text strong{
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+
+  .participants-use-btn{
+    flex-shrink: 0;
+    padding: 6px 16px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-body);
+    font-size: var(--fs-caption);
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 0;
+  }
+
+  .participants-use-btn:active{
+    opacity: 0.85;
+  }
+
+  .stepper-btn{
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: #fff;
+    color: var(--color-ink-soft);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .stepper-btn:active{
+    background: #f2f2f2;
+  }
+
+  .stepper-value{
+    width: 44px;
+    height: 36px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-body);
+    font-weight: 600;
+  }
+
+  /* ---------- Gender Set (collapsible, driven by toggle) ---------- */
+  .gender-players-group{
+    display: none;
+  }
+
+  .gender-players-group.open{
+    display: block;
+  }
+
+  .gender-players-group .row:not(:last-of-type){
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .gender-set-hint{
+    margin: 0;
+    padding: var(--space-2) var(--space-4) var(--space-4);
+    font-size: var(--fs-caption);
+    color: var(--color-placeholder);
+  }
+
+  .gender-set-hint.is-warning{
+    color: #C0392B;
+  }
+
+  /* ---------- Type of game grid ---------- */
+  .type-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .type-card{
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: var(--space-4) var(--space-3);
+    text-align: center;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .type-card .type-title{
+    font-size: var(--fs-body);
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+
+  .type-card .type-desc{
+    font-size: var(--fs-caption);
+    color: var(--color-placeholder);
+    margin-top: var(--space-1);
+    line-height: 1.4;
+  }
+
+  .type-card.selected{
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .type-card.selected .type-title{
+    color: var(--color-accent);
+  }
+
+  .type-card.selected .type-desc{
+    color: var(--color-accent-soft);
+  }
+
+  /* ---------- CTA ---------- */
+  .cta-wrap{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .cta-inner{
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    padding: var(--space-6) var(--space-5);
+    background: linear-gradient(to top, var(--color-bg) 60%, transparent);
+    pointer-events: auto;
+  }
+
+  .cta-button{
+    width: 100%;
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cta-button:active{
+    opacity: 0.9;
+  }
+
+  /* Touch target comfort */
+  button, .field, input, textarea{
+    min-height: 44px;
+  }
+  textarea.field{ min-height: 88px; }
+
+  @media (min-width: 701px){
+    body{ background: var(--color-bg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo-badge">Pt</div>
+    <span class="brand-name">Play Together</span>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1 class="type-large-title-emph">Start create<br>your game list.</h1>
+    <p>Set the time, lock the venue, and let your group fill the roster. Everything below builds the listing your player see</p>
+  </section>
+
+  <!-- Date and Time -->
+  <section class="section">
+    <h2 class="section-label">Date and Time</h2>
+    <div class="card field-group">
+      <div class="date-dropdown">
+        <button
+          class="field datetime-field date-trigger"
+          id="date-trigger"
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+        >
+          <span id="date-trigger-value" class="date-trigger-value">Date / Day</span>
+          <svg class="chip-icon date-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+
+        <div class="date-dropdown-panel" id="date-dropdown-panel" role="dialog" aria-label="Select date">
+          <div class="date-panel-header">
+            <button class="date-nav-btn" id="date-prev" type="button" aria-label="Previous month">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="date-panel-month" id="date-panel-month">August 2026</span>
+            <button class="date-nav-btn" id="date-next" type="button" aria-label="Next month">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          <div class="date-weekdays">
+            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+          </div>
+          <div class="date-grid" id="date-grid" role="grid"></div>
+        </div>
+      </div>
+      <div class="split-row">
+        <div class="split-item">
+          <button
+            class="field datetime-field date-trigger"
+            id="time-start-trigger"
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+          >
+            <span id="time-start-value" class="date-trigger-value is-placeholder">Time start</span>
+            <svg class="chip-icon date-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+        <div class="split-item">
+          <button
+            class="field datetime-field date-trigger"
+            id="time-end-trigger"
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+          >
+            <span id="time-end-value" class="date-trigger-value is-placeholder">Time End</span>
+            <svg class="chip-icon date-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Time Picker Bottom Sheet (shared by Time start / Time end) -->
+  <div class="time-sheet-overlay" id="time-sheet-overlay" aria-hidden="true">
+    <div class="time-sheet-backdrop" id="time-sheet-backdrop"></div>
+    <div class="time-sheet" id="time-sheet" role="dialog" aria-modal="true" aria-label="Select time">
+      <div class="time-sheet-handle"></div>
+      <div class="time-sheet-title">Time</div>
+
+      <div class="time-wheels">
+        <div class="time-wheels-highlight"></div>
+        <div class="time-wheel" id="wheel-hour"></div>
+        <div class="time-wheel-colon">:</div>
+        <div class="time-wheel" id="wheel-minute"></div>
+        <div class="time-wheel" id="wheel-period"></div>
+      </div>
+
+      <button class="time-sheet-done" id="time-sheet-done" type="button">Done</button>
+    </div>
+  </div>
+
+  <!-- Court Count Bottom Sheet -->
+  <div class="time-sheet-overlay" id="court-sheet-overlay" aria-hidden="true">
+    <div class="time-sheet-backdrop" id="court-sheet-backdrop"></div>
+    <div class="time-sheet" id="court-sheet" role="dialog" aria-modal="true" aria-label="Select number of courts">
+      <div class="time-sheet-handle"></div>
+      <div class="time-sheet-title">Court</div>
+
+      <div class="time-wheels">
+        <div class="time-wheels-highlight"></div>
+        <div class="time-wheel" id="wheel-court"></div>
+      </div>
+
+      <button class="time-sheet-done" id="court-sheet-done" type="button">Done</button>
+    </div>
+  </div>
+
+  <!-- Court Number Modal -->
+  <div class="card-modal-overlay" id="court-number-overlay" aria-hidden="true">
+    <div class="card-modal-backdrop" id="court-number-backdrop"></div>
+    <div class="card-modal-card" role="dialog" aria-modal="true" aria-label="Court number">
+      <h2 class="card-modal-title">Court Number</h2>
+      <p class="card-modal-desc">Please enter the court number that you have booked</p>
+      <div class="court-modal-list" id="court-number-list"></div>
+      <button class="card-modal-done" id="court-number-done" type="button">Done</button>
+    </div>
+  </div>
+
+  <!-- Price Modal -->
+  <div class="card-modal-overlay" id="price-overlay" aria-hidden="true">
+    <div class="card-modal-backdrop" id="price-backdrop"></div>
+    <div class="card-modal-card" role="dialog" aria-modal="true" aria-label="Price">
+      <h2 class="card-modal-title">Price</h2>
+      <p class="card-modal-desc">Please set your price for this game</p>
+
+      <div class="price-modal-rows">
+        <div class="row price-row-divider">
+          <span class="row-label">Set price by gender</span>
+          <button class="toggle" id="toggle-price-gender" role="switch" aria-checked="false" aria-pressed="false" aria-label="Set price by gender"></button>
+        </div>
+
+        <div class="row price-row-divider" id="price-currency-row">
+          <span class="row-label">Currency</span>
+          <div class="chip currency-chip">
+            <select class="currency-select" id="price-currency-select" aria-label="Currency">
+              <option value="MYR">MYR</option>
+              <option value="USD">USD</option>
+              <option value="SGD">SGD</option>
+              <option value="IDR">IDR</option>
+            </select>
+            <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+
+        <div class="price-general-field" id="price-general-field">
+          <div class="row">
+            <span class="row-label">Price</span>
+            <div class="price-amount">
+              <span class="price-amount-currency" data-price-currency-label>MYR</span>
+              <input class="price-amount-input" type="text" inputmode="decimal" placeholder="0.00" id="price-general-input" aria-label="Price" />
+            </div>
+          </div>
+        </div>
+
+        <div class="price-gender-fields" id="price-gender-fields" hidden>
+          <div class="row price-row-divider">
+            <span class="row-label">Male Price</span>
+            <div class="price-amount">
+              <span class="price-amount-currency" data-price-currency-label>MYR</span>
+              <input class="price-amount-input" type="text" inputmode="decimal" placeholder="0.00" id="price-male-input" aria-label="Male price" />
+            </div>
+          </div>
+          <div class="row">
+            <span class="row-label">Female Price</span>
+            <div class="price-amount">
+              <span class="price-amount-currency" data-price-currency-label>MYR</span>
+              <input class="price-amount-input" type="text" inputmode="decimal" placeholder="0.00" id="price-female-input" aria-label="Female price" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="card-modal-done" id="price-done" type="button">Done</button>
+    </div>
+  </div>
+
+  <!-- Location -->
+  <section class="section">
+    <h2 class="section-label">Location</h2>
+    <div class="card field-group">
+      <input class="field" type="text" id="venue-input" placeholder="Venue" />
+      <div class="field-with-action">
+        <input class="field" type="text" id="maps-link-input" placeholder="Paste Google maps link here (Optional)" inputmode="url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button class="field-action-btn" type="button" data-paste-target="maps-link-input">Paste</button>
+      </div>
+      <div class="field-with-action">
+        <input class="field" type="text" id="waze-link-input" placeholder="Paste Waze link here (Optional)" inputmode="url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button class="field-action-btn" type="button" data-paste-target="waze-link-input">Paste</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Court -->
+  <section class="section">
+    <h2 class="section-label">Court</h2>
+    <div class="card row-group">
+      <div class="row">
+        <span class="row-label">Court booked</span>
+        <button class="toggle" id="toggle-court-booked" role="switch" aria-checked="false" aria-pressed="false" aria-label="Court booked"></button>
+      </div>
+      <div class="row row--court-count">
+        <span class="row-label">How many court</span>
+        <button
+          class="chip"
+          id="court-count-chip"
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+        >
+          <span id="court-count-value">1</span>
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+      <button class="row" id="court-number-row" type="button" aria-haspopup="dialog" aria-expanded="false">
+        <div class="row-text">
+          <span class="row-label">Court number</span>
+          <div class="row-sub" id="court-number-summary" hidden></div>
+        </div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- Game Details -->
+  <section class="section">
+    <h2 class="section-label">Game Details</h2>
+    <div class="card field-group">
+      <input class="field" type="text" id="title-input" placeholder="Title of game (Required)" />
+      <textarea class="field" id="description-field" placeholder="Description (up to 500 sentences)"></textarea>
+    </div>
+    <p class="field-hint">Tip: wrap words with *asterisks* to make them bold, e.g. *Important*. Emoji from your keyboard work too.</p>
+  </section>
+
+  <!-- Type of game -->
+  <section class="section">
+    <h2 class="section-label">Type of game</h2>
+    <p class="section-hint">You can choose up to 3 type of game</p>
+    <div class="type-grid" id="type-grid">
+      <button class="type-card selected" data-type="Social">
+        <div class="type-title">Social</div>
+        <div class="type-desc">Casual badminton game for fun</div>
+      </button>
+      <button class="type-card" data-type="Sparring">
+        <div class="type-title">Sparring</div>
+        <div class="type-desc">Compete and improve game together</div>
+      </button>
+      <button class="type-card" data-type="Internal">
+        <div class="type-title">Internal</div>
+        <div class="type-desc">Friendly match within community</div>
+      </button>
+      <button class="type-card" data-type="Training">
+        <div class="type-title">Training</div>
+        <div class="type-desc">Train  skills and imrove game</div>
+      </button>
+    </div>
+  </section>
+
+  <!-- Shuttle -->
+  <section class="section">
+    <h2 class="section-label">Shuttle</h2>
+    <div class="card field-group">
+      <input class="field" type="text" id="shuttle-input" placeholder="Shuttle brand/model (Optional)" />
+    </div>
+  </section>
+
+  <!-- Participants -->
+  <section class="section">
+    <h2 class="section-label">Participants</h2>
+    <div class="card field-group">
+      <div class="participants-field">
+        <input
+          class="field participants-input"
+          type="number"
+          inputmode="numeric"
+          min="1"
+          id="participants-input"
+          placeholder="Number of players"
+        />
+      </div>
+    </div>
+    <div class="participants-suggestion-row" id="participants-suggestion-row">
+      <span class="participants-suggestion-text">
+        Suggested: <strong id="participants-suggestion-value">8</strong> players for <span id="participants-suggestion-courts">1</span> court
+      </span>
+      <button class="participants-use-btn" id="participants-use-btn" type="button">Use</button>
+    </div>
+  </section>
+
+  <!-- Gender Set -->
+  <section class="section">
+    <h2 class="section-label">Gender Set</h2>
+    <div class="card row-group">
+      <div class="row">
+        <span class="row-label">Set player gender</span>
+        <button class="toggle" id="toggle-gender-set" role="switch" aria-checked="false" aria-pressed="false" aria-label="Set player gender"></button>
+      </div>
+      <div class="gender-players-group" id="gender-players-group">
+        <div class="row">
+          <span class="row-label">Male player</span>
+          <div class="stepper" data-stepper="male-player" data-min="0">
+            <button class="stepper-btn" data-action="decrement">−</button>
+            <div class="stepper-value">0</div>
+            <button class="stepper-btn" data-action="increment">+</button>
+          </div>
+        </div>
+        <div class="row">
+          <span class="row-label">Female player</span>
+          <div class="stepper" data-stepper="female-player" data-min="0">
+            <button class="stepper-btn" data-action="decrement">−</button>
+            <div class="stepper-value">0</div>
+            <button class="stepper-btn" data-action="increment">+</button>
+          </div>
+        </div>
+        <p class="gender-set-hint" id="gender-set-hint">Set total players first</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section class="section">
+    <h2 class="section-label">Settings</h2>
+    <div class="card row-group">
+      <button class="row" id="price-row" type="button" aria-haspopup="dialog" aria-expanded="false">
+        <div class="row-text">
+          <span class="row-label">Price</span>
+          <div class="row-sub" id="price-summary">Free</div>
+        </div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="row">
+        <span class="row-label">Mark game as private in your group</span>
+        <button class="toggle" id="toggle-private" role="switch" aria-checked="false" aria-pressed="false" aria-label="Mark game as private in your group"></button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-inner">
+    <button class="cta-button" id="create-game-btn">Create game list</button>
+  </div>
+</div>
+
+<script>
+  // ---------- Shared dropdown registry ----------
+  // Ensures only one dropdown (Date, Court count, Time start, Time end)
+  // is open at a time — opening one closes the others automatically.
+  var registeredDropdownClosers = [];
+  function registerDropdownCloser(closeFn){
+    registeredDropdownClosers.push(closeFn);
+  }
+  function closeOtherDropdowns(exceptFn){
+    registeredDropdownClosers.forEach(function(closeFn){
+      if (closeFn !== exceptFn) closeFn();
+    });
+  }
+
+  // ---------- Shared scroll-wheel factories (used by Time & Court sheets) ----------
+  var WHEEL_ITEM_HEIGHT = 40;
+
+  // Builds a wheel that scrolls endlessly in both directions by rendering
+  // several repeated copies of the base list and silently re-centering
+  // the scroll position (to an identical-looking spot) as the user nears
+  // either edge — so the loop is invisible and never "runs out".
+  function createInfiniteWheel(container, baseItems, formatFn){
+    var itemsPerSet = baseItems.length;
+    var repeats = Math.max(5, Math.ceil(300 / itemsPerSet));
+    var middleSetIndex = Math.floor(repeats / 2);
+    var isNumeric = typeof baseItems[0] === 'number';
+    var scrollTimer = null;
+
+    container.innerHTML = '';
+    for (var r = 0; r < repeats; r++){
+      baseItems.forEach(function(val){
+        var div = document.createElement('div');
+        div.className = 'time-wheel-item';
+        div.textContent = formatFn(val);
+        div.dataset.value = String(val);
+        container.appendChild(div);
+      });
+    }
+
+    function getItems(){
+      return Array.prototype.slice.call(container.querySelectorAll('.time-wheel-item'));
+    }
+
+    function getSelectedIndex(){
+      return Math.round(container.scrollTop / WHEEL_ITEM_HEIGHT);
+    }
+
+    function scrollToIndex(index, smooth){
+      container.scrollTo({ top: index * WHEEL_ITEM_HEIGHT, behavior: smooth ? 'smooth' : 'auto' });
+    }
+
+    function markSelected(){
+      var items = getItems();
+      var index = Math.max(0, Math.min(items.length - 1, getSelectedIndex()));
+      items.forEach(function(item, i){
+        item.classList.toggle('selected', i === index);
+      });
+    }
+
+    // Once settled, if we're near the start/end of the repeated list,
+    // jump instantly to the equivalent position in the middle copy —
+    // the row content is identical, so this is imperceptible to the user,
+    // and it guarantees there's always more room to keep scrolling.
+    function rewrapIfNeeded(){
+      var index = getSelectedIndex();
+      var setIndex = Math.floor(index / itemsPerSet);
+      if (setIndex <= 1 || setIndex >= repeats - 2){
+        var withinSet = ((index % itemsPerSet) + itemsPerSet) % itemsPerSet;
+        var newIndex = middleSetIndex * itemsPerSet + withinSet;
+        container.scrollTop = newIndex * WHEEL_ITEM_HEIGHT;
+        markSelected();
+      }
+    }
+
+    container.addEventListener('scroll', function(){
+      markSelected();
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function(){
+        var index = Math.max(0, Math.min(getItems().length - 1, getSelectedIndex()));
+        scrollToIndex(index, true);
+        markSelected();
+        setTimeout(rewrapIfNeeded, 300);
+      }, 120);
+    });
+
+    container.addEventListener('click', function(e){
+      var item = e.target.closest('.time-wheel-item');
+      if (!item) return;
+      scrollToIndex(getItems().indexOf(item), true);
+    });
+
+    // Start centered in the middle copy so there's equal room to scroll
+    // up or down immediately.
+    scrollToIndex(middleSetIndex * itemsPerSet, false);
+    markSelected();
+
+    return {
+      scrollToValue: function(value, smooth){
+        var idx = baseItems.indexOf(value);
+        if (idx < 0) idx = 0;
+        scrollToIndex(middleSetIndex * itemsPerSet + idx, !!smooth);
+        if (!smooth) markSelected();
+      },
+      getValue: function(){
+        var items = getItems();
+        var index = Math.max(0, Math.min(items.length - 1, getSelectedIndex()));
+        var raw = items[index].dataset.value;
+        return isNumeric ? parseInt(raw, 10) : raw;
+      }
+    };
+  }
+
+  // Builds a wheel with a fixed, bounded range — scrolling stops at the
+  // first and last item (no endless loop).
+  function createFiniteWheel(container, baseItems, formatFn){
+    var isNumeric = typeof baseItems[0] === 'number';
+    var scrollTimer = null;
+
+    container.innerHTML = '';
+    baseItems.forEach(function(val){
+      var div = document.createElement('div');
+      div.className = 'time-wheel-item';
+      div.textContent = formatFn(val);
+      div.dataset.value = String(val);
+      container.appendChild(div);
+    });
+
+    function getItems(){
+      return Array.prototype.slice.call(container.querySelectorAll('.time-wheel-item'));
+    }
+
+    function getSelectedIndex(){
+      var maxIndex = getItems().length - 1;
+      return Math.max(0, Math.min(maxIndex, Math.round(container.scrollTop / WHEEL_ITEM_HEIGHT)));
+    }
+
+    function scrollToIndex(index, smooth){
+      var maxIndex = getItems().length - 1;
+      var clamped = Math.max(0, Math.min(maxIndex, index));
+      container.scrollTo({ top: clamped * WHEEL_ITEM_HEIGHT, behavior: smooth ? 'smooth' : 'auto' });
+    }
+
+    function markSelected(){
+      var items = getItems();
+      var index = getSelectedIndex();
+      items.forEach(function(item, i){
+        item.classList.toggle('selected', i === index);
+      });
+    }
+
+    container.addEventListener('scroll', function(){
+      markSelected();
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function(){
+        scrollToIndex(getSelectedIndex(), true);
+        markSelected();
+      }, 120);
+    });
+
+    container.addEventListener('click', function(e){
+      var item = e.target.closest('.time-wheel-item');
+      if (!item) return;
+      scrollToIndex(getItems().indexOf(item), true);
+    });
+
+    scrollToIndex(0, false);
+    markSelected();
+
+    return {
+      scrollToValue: function(value, smooth){
+        var idx = baseItems.indexOf(value);
+        if (idx < 0) idx = 0;
+        scrollToIndex(idx, !!smooth);
+        if (!smooth) markSelected();
+      },
+      getValue: function(){
+        var items = getItems();
+        var raw = items[getSelectedIndex()].dataset.value;
+        return isNumeric ? parseInt(raw, 10) : raw;
+      }
+    };
+  }
+
+  // ---------- Toggles ----------
+  // (The "Set player gender" and "Set price by gender" toggles are excluded
+  // here — they have their own custom handlers further below that also
+  // show/hide their related field groups.)
+  document.querySelectorAll('.toggle:not(#toggle-gender-set):not(#toggle-price-gender)').forEach(function(toggle){
+    toggle.addEventListener('click', function(){
+      var pressed = toggle.getAttribute('aria-pressed') === 'true';
+      var next = !pressed;
+      toggle.setAttribute('aria-pressed', String(next));
+      toggle.setAttribute('aria-checked', String(next));
+    });
+  });
+
+  // ---------- Steppers ----------
+  // (Male/Female player steppers are excluded here — they get custom
+  // capped logic tied to the Participants total, further below.)
+  document.querySelectorAll('.stepper:not([data-stepper="male-player"]):not([data-stepper="female-player"])').forEach(function(stepper){
+    var min = parseInt(stepper.dataset.min || '0', 10);
+    var valueEl = stepper.querySelector('.stepper-value');
+    var decBtn = stepper.querySelector('[data-action="decrement"]');
+    var incBtn = stepper.querySelector('[data-action="increment"]');
+
+    function getValue(){ return parseInt(valueEl.textContent, 10); }
+    function setValue(v){ valueEl.textContent = String(v); }
+
+    decBtn.addEventListener('click', function(){
+      var next = Math.max(min, getValue() - 1);
+      setValue(next);
+    });
+    incBtn.addEventListener('click', function(){
+      setValue(getValue() + 1);
+    });
+  });
+
+  // ---------- Type of game (max 3) ----------
+  var MAX_TYPES = 3;
+  var typeGrid = document.getElementById('type-grid');
+  typeGrid.addEventListener('click', function(e){
+    var card = e.target.closest('.type-card');
+    if(!card) return;
+
+    var selectedCount = typeGrid.querySelectorAll('.type-card.selected').length;
+    var isSelected = card.classList.contains('selected');
+
+    if(isSelected){
+      card.classList.remove('selected');
+    } else {
+      if(selectedCount >= MAX_TYPES) return;
+      card.classList.add('selected');
+    }
+  });
+
+  // ---------- Date dropdown / Calendar ----------
+  (function(){
+    var trigger = document.getElementById('date-trigger');
+    var triggerValue = document.getElementById('date-trigger-value');
+    var panel = document.getElementById('date-dropdown-panel');
+    var monthLabel = document.getElementById('date-panel-month');
+    var grid = document.getElementById('date-grid');
+    var prevBtn = document.getElementById('date-prev');
+    var nextBtn = document.getElementById('date-next');
+
+    if (!trigger) return;
+
+    var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    var selectedDate = new Date(today);
+    var viewYear = today.getFullYear();
+    var viewMonth = today.getMonth();
+
+    function isSameDay(a, b){
+      return a.getFullYear() === b.getFullYear() &&
+             a.getMonth() === b.getMonth() &&
+             a.getDate() === b.getDate();
+    }
+
+    function isPast(date){
+      return date.getTime() < today.getTime();
+    }
+
+    function formatTriggerLabel(date){
+      var weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
+      var day = date.getDate();
+      var month = date.toLocaleDateString('en-US', { month: 'short' });
+      var year = date.getFullYear();
+      return weekday + ', ' + day + ' ' + month + ' ' + year;
+    }
+
+    function updateTriggerLabel(){
+      triggerValue.textContent = formatTriggerLabel(selectedDate);
+      triggerValue.classList.remove('is-placeholder');
+    }
+
+    function renderCalendar(){
+      monthLabel.textContent = MONTH_NAMES[viewMonth] + ' ' + viewYear;
+
+      // Disable "Previous" when the viewed month is the current month
+      // (no earlier month can contain a valid, non-past date).
+      var isCurrentMonth = (viewYear === today.getFullYear() && viewMonth === today.getMonth());
+      prevBtn.disabled = isCurrentMonth;
+
+      grid.innerHTML = '';
+
+      var firstOfMonth = new Date(viewYear, viewMonth, 1);
+      var startOffset = firstOfMonth.getDay(); // 0 = Sunday
+      var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+      for (var i = 0; i < startOffset; i++){
+        var empty = document.createElement('div');
+        empty.className = 'date-cell date-cell--empty';
+        grid.appendChild(empty);
+      }
+
+      for (var d = 1; d <= daysInMonth; d++){
+        var cellDate = new Date(viewYear, viewMonth, d);
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'date-cell';
+        btn.textContent = String(d);
+
+        if (isSameDay(cellDate, today)){
+          btn.classList.add('date-cell--today');
+        }
+        if (isSameDay(cellDate, selectedDate)){
+          btn.classList.add('selected');
+        }
+        if (isPast(cellDate)){
+          btn.disabled = true;
+          btn.setAttribute('aria-disabled', 'true');
+        } else {
+          btn.addEventListener('click', (function(dateForCell){
+            return function(){
+              selectedDate = dateForCell;
+              updateTriggerLabel();
+              closePanel();
+              renderCalendar();
+            };
+          })(cellDate));
+        }
+
+        grid.appendChild(btn);
+      }
+    }
+
+    function openPanel(){
+      panel.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+      viewYear = selectedDate.getFullYear();
+      viewMonth = selectedDate.getMonth();
+      renderCalendar();
+    }
+
+    function closePanel(){
+      panel.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    trigger.addEventListener('click', function(e){
+      e.stopPropagation();
+      var isOpen = panel.classList.contains('open');
+      if (isOpen){
+        closePanel();
+      } else {
+        closeOtherDropdowns(closePanel);
+        openPanel();
+      }
+    });
+
+    prevBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (viewMonth === 0){
+        viewMonth = 11;
+        viewYear -= 1;
+      } else {
+        viewMonth -= 1;
+      }
+      renderCalendar();
+    });
+
+    nextBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      if (viewMonth === 11){
+        viewMonth = 0;
+        viewYear += 1;
+      } else {
+        viewMonth += 1;
+      }
+      renderCalendar();
+    });
+
+    document.addEventListener('click', function(e){
+      if (!panel.contains(e.target) && e.target !== trigger && !trigger.contains(e.target)){
+        closePanel();
+      }
+    });
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape'){
+        closePanel();
+      }
+    });
+
+    // Initialize: default selection is today's date.
+    updateTriggerLabel();
+    renderCalendar();
+    registerDropdownCloser(closePanel);
+  })();
+
+  // ---------- Court count bottom sheet (finite scroll wheel, 1-20 courts) ----------
+  (function(){
+    var MAX_COURTS = 20;
+    var COURT_NUMBERS = [];
+    for (var c = 1; c <= MAX_COURTS; c++) COURT_NUMBERS.push(c);
+
+    var chip = document.getElementById('court-count-chip');
+    var valueEl = document.getElementById('court-count-value');
+    var overlay = document.getElementById('court-sheet-overlay');
+    var backdrop = document.getElementById('court-sheet-backdrop');
+    var doneBtn = document.getElementById('court-sheet-done');
+    var wheelCourtEl = document.getElementById('wheel-court');
+
+    if (!chip || !overlay || !wheelCourtEl) return;
+
+    var courtWheel = createFiniteWheel(wheelCourtEl, COURT_NUMBERS, function(n){ return String(n); });
+
+    function openSheet(){
+      var currentValue = parseInt(valueEl.textContent, 10) || 1;
+
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      chip.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+
+      requestAnimationFrame(function(){
+        courtWheel.scrollToValue(currentValue, false);
+      });
+    }
+
+    function closeSheet(){
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      chip.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    chip.addEventListener('click', function(e){
+      e.stopPropagation();
+      closeOtherDropdowns(closeSheet);
+      openSheet();
+    });
+
+    backdrop.addEventListener('click', closeSheet);
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.classList.contains('open')){
+        closeSheet();
+      }
+    });
+
+    doneBtn.addEventListener('click', function(){
+      var selectedCourts = courtWheel.getValue();
+      valueEl.textContent = String(selectedCourts);
+      closeSheet();
+
+      document.dispatchEvent(new CustomEvent('courtcountchange', {
+        detail: { courtCount: selectedCourts }
+      }));
+    });
+
+    registerDropdownCloser(closeSheet);
+  })();
+
+  // ---------- Court number modal (centered card, key in number per court) ----------
+  (function(){
+    var row = document.getElementById('court-number-row');
+    var summaryEl = document.getElementById('court-number-summary');
+    var overlay = document.getElementById('court-number-overlay');
+    var backdrop = document.getElementById('court-number-backdrop');
+    var listEl = document.getElementById('court-number-list');
+    var doneBtn = document.getElementById('court-number-done');
+    var courtCountValueEl = document.getElementById('court-count-value');
+
+    if (!row || !overlay || !listEl) return;
+
+    var courtValues = {};
+
+    function getCourtCount(){
+      return parseInt(courtCountValueEl.textContent, 10) || 1;
+    }
+
+    function buildList(){
+      var count = getCourtCount();
+      listEl.innerHTML = '';
+
+      for (var i = 1; i <= count; i++){
+        var item = document.createElement('div');
+        item.className = 'court-modal-row';
+
+        var label = document.createElement('span');
+        label.className = 'court-modal-row-label';
+        label.textContent = 'Court ' + i;
+
+        var input = document.createElement('input');
+        input.className = 'court-modal-input';
+        input.type = 'text';
+        input.inputMode = 'numeric';
+        input.placeholder = 'C' + i;
+        input.value = courtValues[i] || '';
+        input.setAttribute('aria-label', 'Court ' + i + ' number');
+        input.addEventListener('input', function(idx){
+          return function(e){ courtValues[idx] = e.target.value; };
+        }(i));
+
+        item.appendChild(label);
+        item.appendChild(input);
+        listEl.appendChild(item);
+      }
+    }
+
+    function updateSummary(){
+      var count = getCourtCount();
+      var entered = [];
+      for (var i = 1; i <= count; i++){
+        if (courtValues[i]) entered.push(courtValues[i]);
+      }
+      if (entered.length){
+        summaryEl.textContent = entered.join(', ');
+        summaryEl.hidden = false;
+      } else {
+        summaryEl.hidden = true;
+      }
+    }
+
+    function openModal(){
+      buildList();
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      row.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(){
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      row.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      updateSummary();
+    }
+
+    row.addEventListener('click', function(e){
+      e.stopPropagation();
+      closeOtherDropdowns(closeModal);
+      openModal();
+    });
+
+    backdrop.addEventListener('click', closeModal);
+    doneBtn.addEventListener('click', closeModal);
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.classList.contains('open')){
+        closeModal();
+      }
+    });
+
+    registerDropdownCloser(closeModal);
+  })();
+
+  // ---------- Price modal (centered card, gender-split pricing) ----------
+  (function(){
+    var row = document.getElementById('price-row');
+    var summaryEl = document.getElementById('price-summary');
+    var overlay = document.getElementById('price-overlay');
+    var backdrop = document.getElementById('price-backdrop');
+    var doneBtn = document.getElementById('price-done');
+    var genderToggle = document.getElementById('toggle-price-gender');
+    var genderFields = document.getElementById('price-gender-fields');
+    var generalField = document.getElementById('price-general-field');
+    var currencySelect = document.getElementById('price-currency-select');
+    var generalInput = document.getElementById('price-general-input');
+    var maleInput = document.getElementById('price-male-input');
+    var femaleInput = document.getElementById('price-female-input');
+    var currencyLabels = document.querySelectorAll('[data-price-currency-label]');
+
+    if (!row || !overlay) return;
+
+    function syncCurrencyLabels(){
+      var val = currencySelect.value;
+      currencyLabels.forEach(function(el){ el.textContent = val; });
+    }
+
+    function setGenderPricing(isOn){
+      genderToggle.setAttribute('aria-pressed', String(isOn));
+      genderToggle.setAttribute('aria-checked', String(isOn));
+      genderFields.hidden = !isOn;
+      generalField.hidden = isOn;
+    }
+
+    function parseAmount(input){
+      var val = parseFloat(input.value);
+      return isNaN(val) ? null : val;
+    }
+
+    function updateSummary(){
+      var isOn = genderToggle.getAttribute('aria-pressed') === 'true';
+      var currency = currencySelect.value;
+
+      if (!isOn){
+        var general = parseAmount(generalInput);
+        summaryEl.textContent = general === null ? 'Free' : (currency + ' ' + general.toFixed(2));
+        return;
+      }
+
+      var male = parseAmount(maleInput);
+      var female = parseAmount(femaleInput);
+      if (male === null && female === null){
+        summaryEl.textContent = 'Free';
+        return;
+      }
+      var maleText = currency + ' ' + (male === null ? '0.00' : male.toFixed(2));
+      var femaleText = currency + ' ' + (female === null ? '0.00' : female.toFixed(2));
+      summaryEl.textContent = 'Male ' + maleText + ' · Female ' + femaleText;
+    }
+
+    function openModal(){
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      row.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(){
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      row.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      updateSummary();
+    }
+
+    genderToggle.addEventListener('click', function(){
+      var isOn = genderToggle.getAttribute('aria-pressed') === 'true';
+      setGenderPricing(!isOn);
+    });
+
+    currencySelect.addEventListener('change', syncCurrencyLabels);
+
+    row.addEventListener('click', function(e){
+      e.stopPropagation();
+      closeOtherDropdowns(closeModal);
+      openModal();
+    });
+
+    backdrop.addEventListener('click', closeModal);
+    doneBtn.addEventListener('click', closeModal);
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.classList.contains('open')){
+        closeModal();
+      }
+    });
+
+    registerDropdownCloser(closeModal);
+    syncCurrencyLabels();
+  })();
+
+  // ---------- Participants suggestion (based on How many court) ----------
+  // Math: 1 court = 8 players (maximum).
+  (function(){
+    var PLAYERS_PER_COURT = 8;
+    var input = document.getElementById('participants-input');
+    var suggestionBtn = document.getElementById('participants-use-btn');
+    var suggestionValueEl = document.getElementById('participants-suggestion-value');
+    var suggestionCourtsEl = document.getElementById('participants-suggestion-courts');
+
+    if (!input || !suggestionBtn) return;
+
+    var currentSuggestedPlayers = 1 * PLAYERS_PER_COURT;
+
+    function updateSuggestion(courtCount){
+      currentSuggestedPlayers = courtCount * PLAYERS_PER_COURT;
+      suggestionValueEl.textContent = String(currentSuggestedPlayers);
+      suggestionCourtsEl.textContent = String(courtCount) + (courtCount === 1 ? ' court' : ' courts');
+    }
+
+    // Listen for changes from the "How many court" dropdown.
+    document.addEventListener('courtcountchange', function(e){
+      updateSuggestion(e.detail.courtCount);
+    });
+
+    // Clicking the suggestion fills the input with the suggested value.
+    suggestionBtn.addEventListener('click', function(){
+      input.value = currentSuggestedPlayers;
+      input.focus();
+    });
+
+    // Initialize with the default court count (1 court = 8 players).
+    updateSuggestion(1);
+  })();
+
+  // ---------- Gender Set (toggle + steppers capped to Participants total) ----------
+  (function(){
+    var participantsInput = document.getElementById('participants-input');
+    var genderToggle = document.getElementById('toggle-gender-set');
+    var genderGroup = document.getElementById('gender-players-group');
+    var hint = document.getElementById('gender-set-hint');
+
+    var maleStepper = document.querySelector('.stepper[data-stepper="male-player"]');
+    var femaleStepper = document.querySelector('.stepper[data-stepper="female-player"]');
+
+    if (!genderToggle || !genderGroup || !maleStepper || !femaleStepper) return;
+
+    var maleValueEl = maleStepper.querySelector('.stepper-value');
+    var femaleValueEl = femaleStepper.querySelector('.stepper-value');
+    var maleDecBtn = maleStepper.querySelector('[data-action="decrement"]');
+    var maleIncBtn = maleStepper.querySelector('[data-action="increment"]');
+    var femaleDecBtn = femaleStepper.querySelector('[data-action="decrement"]');
+    var femaleIncBtn = femaleStepper.querySelector('[data-action="increment"]');
+
+    function getTotalParticipants(){
+      var val = parseInt(participantsInput.value, 10);
+      return (!isNaN(val) && val > 0) ? val : 0;
+    }
+
+    function getMale(){ return parseInt(maleValueEl.textContent, 10); }
+    function getFemale(){ return parseInt(femaleValueEl.textContent, 10); }
+
+    // Splits the Participants total evenly: extra player (if odd) goes to Male.
+    function defaultSplit(total){
+      var male = Math.ceil(total / 2);
+      var female = total - male;
+      return { male: male, female: female };
+    }
+
+    function updateHint(){
+      var total = getTotalParticipants();
+      if (total === 0){
+        hint.textContent = 'Set total players first';
+        hint.classList.add('is-warning');
+        return;
+      }
+      var remaining = total - (getMale() + getFemale());
+      hint.classList.remove('is-warning');
+      if (remaining === 0){
+        hint.textContent = 'All ' + total + ' players assigned';
+      } else {
+        hint.textContent = remaining + ' of ' + total + ' players left to assign';
+      }
+    }
+
+    function refreshButtonStates(){
+      var total = getTotalParticipants();
+      var male = getMale();
+      var female = getFemale();
+      var atCap = (male + female) >= total;
+
+      maleDecBtn.disabled = male <= 0;
+      femaleDecBtn.disabled = female <= 0;
+      maleIncBtn.disabled = total === 0 || atCap;
+      femaleIncBtn.disabled = total === 0 || atCap;
+
+      updateHint();
+    }
+
+    maleDecBtn.addEventListener('click', function(){
+      if (getMale() <= 0) return;
+      maleValueEl.textContent = String(getMale() - 1);
+      refreshButtonStates();
+    });
+
+    maleIncBtn.addEventListener('click', function(){
+      var total = getTotalParticipants();
+      if (total === 0 || (getMale() + getFemale()) >= total) return;
+      maleValueEl.textContent = String(getMale() + 1);
+      refreshButtonStates();
+    });
+
+    femaleDecBtn.addEventListener('click', function(){
+      if (getFemale() <= 0) return;
+      femaleValueEl.textContent = String(getFemale() - 1);
+      refreshButtonStates();
+    });
+
+    femaleIncBtn.addEventListener('click', function(){
+      var total = getTotalParticipants();
+      if (total === 0 || (getMale() + getFemale()) >= total) return;
+      femaleValueEl.textContent = String(getFemale() + 1);
+      refreshButtonStates();
+    });
+
+    genderToggle.addEventListener('click', function(){
+      var isOn = genderToggle.getAttribute('aria-pressed') === 'true';
+      var next = !isOn;
+      genderToggle.setAttribute('aria-pressed', String(next));
+      genderToggle.setAttribute('aria-checked', String(next));
+
+      if (next){
+        // Turning on: seed Male/Female from the Participants total.
+        var split = defaultSplit(getTotalParticipants());
+        maleValueEl.textContent = String(split.male);
+        femaleValueEl.textContent = String(split.female);
+        genderGroup.classList.add('open');
+        refreshButtonStates();
+      } else {
+        genderGroup.classList.remove('open');
+      }
+    });
+
+    // If the Participants total changes while gender split is active,
+    // re-sync the default split and re-evaluate cap/hint.
+    participantsInput.addEventListener('input', function(){
+      if (genderToggle.getAttribute('aria-pressed') !== 'true') return;
+      var split = defaultSplit(getTotalParticipants());
+      maleValueEl.textContent = String(split.male);
+      femaleValueEl.textContent = String(split.female);
+      refreshButtonStates();
+    });
+  })();
+
+  // ---------- Time Picker Bottom Sheet (Time start / Time end) — 12-hour format ----------
+  (function(){
+    var MIN_DURATION_MINUTES = 60; // Time End must be at least 1 hour after Time Start
+
+    var HOURS = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // display order, like the screenshot
+    var MINUTES = [];
+    for (var m = 0; m < 60; m++) MINUTES.push(m);
+    var PERIODS = ['AM', 'PM'];
+
+    var overlay = document.getElementById('time-sheet-overlay');
+    var backdrop = document.getElementById('time-sheet-backdrop');
+    var doneBtn = document.getElementById('time-sheet-done');
+    var wheelHourEl = document.getElementById('wheel-hour');
+    var wheelMinuteEl = document.getElementById('wheel-minute');
+    var wheelPeriodEl = document.getElementById('wheel-period');
+
+    var startTrigger = document.getElementById('time-start-trigger');
+    var startValueEl = document.getElementById('time-start-value');
+    var endTrigger = document.getElementById('time-end-trigger');
+    var endValueEl = document.getElementById('time-end-value');
+
+    if (!overlay || !startTrigger || !endTrigger) return;
+
+    var activeField = null; // 'start' | 'end'
+    var startMinutes = null; // last confirmed Start value, in minutes since midnight
+    var scrollTimers = {};
+
+    var hourWheel = createInfiniteWheel(wheelHourEl, HOURS, function(h){ return String(h); });
+    var minuteWheel = createInfiniteWheel(wheelMinuteEl, MINUTES, function(m){ return m < 10 ? '0' + m : String(m); });
+    var periodWheel = createFiniteWheel(wheelPeriodEl, PERIODS, function(p){ return p.toLowerCase(); });
+
+    function setWheelsTo(hour12, minute, period, smooth){
+      hourWheel.scrollToValue(hour12, smooth);
+      minuteWheel.scrollToValue(minute, smooth);
+      periodWheel.scrollToValue(period, smooth);
+    }
+
+    function minutesToParts(totalMinutes){
+      var h24 = Math.floor(totalMinutes / 60) % 24;
+      var minute = totalMinutes % 60;
+      var period = h24 < 12 ? 'AM' : 'PM';
+      var hour12 = h24 % 12;
+      if (hour12 === 0) hour12 = 12;
+      return { hour12: hour12, minute: minute, period: period };
+    }
+
+    function partsToMinutes(hour12, minute, period){
+      var h24 = period === 'AM'
+        ? (hour12 === 12 ? 0 : hour12)
+        : (hour12 === 12 ? 12 : hour12 + 12);
+      return h24 * 60 + minute;
+    }
+
+    function formatLabel(hour12, minute, period){
+      var minuteStr = minute < 10 ? '0' + minute : String(minute);
+      return hour12 + ':' + minuteStr + ' ' + period;
+    }
+
+    // Time End can be on the next day (e.g. Start 11:00 PM, End 1:00 AM).
+    // If End's wall-clock time is earlier than Start's, treat it as the
+    // following day when checking the minimum-duration rule.
+    function effectiveEndMinutes(startMin, endMin){
+      return endMin >= startMin ? endMin : endMin + 24 * 60;
+    }
+
+    function openSheet(field){
+      activeField = field;
+
+      var currentLabel = field === 'start' ? startValueEl.textContent : endValueEl.textContent;
+      var isPlaceholder = field === 'start'
+        ? startValueEl.classList.contains('is-placeholder')
+        : endValueEl.classList.contains('is-placeholder');
+
+      var parts;
+      if (!isPlaceholder && currentLabel){
+        var match = currentLabel.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (match){
+          parts = { hour12: parseInt(match[1], 10), minute: parseInt(match[2], 10), period: match[3].toUpperCase() };
+        }
+      }
+      if (!parts){
+        // Sensible default: Start defaults to 9:00 AM; End defaults to Start + 1 hour (or 10:00 AM).
+        if (field === 'end' && startMinutes !== null){
+          parts = minutesToParts(startMinutes + MIN_DURATION_MINUTES);
+        } else {
+          parts = { hour12: 9, minute: 0, period: 'AM' };
+        }
+      }
+
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+
+      requestAnimationFrame(function(){
+        setWheelsTo(parts.hour12, parts.minute, parts.period, false);
+      });
+    }
+
+    function closeSheet(){
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      startTrigger.setAttribute('aria-expanded', 'false');
+      endTrigger.setAttribute('aria-expanded', 'false');
+      activeField = null;
+    }
+
+    startTrigger.addEventListener('click', function(e){
+      e.stopPropagation();
+      closeOtherDropdowns(closeSheet);
+      startTrigger.setAttribute('aria-expanded', 'true');
+      openSheet('start');
+    });
+
+    endTrigger.addEventListener('click', function(e){
+      e.stopPropagation();
+      closeOtherDropdowns(closeSheet);
+      endTrigger.setAttribute('aria-expanded', 'true');
+      openSheet('end');
+    });
+
+    backdrop.addEventListener('click', closeSheet);
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.classList.contains('open')){
+        closeSheet();
+      }
+    });
+
+    doneBtn.addEventListener('click', function(){
+      var hour12 = hourWheel.getValue();
+      var minute = minuteWheel.getValue();
+      var period = periodWheel.getValue();
+      var label = formatLabel(hour12, minute, period);
+      var totalMinutes = partsToMinutes(hour12, minute, period);
+
+      if (activeField === 'start'){
+        startMinutes = totalMinutes;
+        startValueEl.textContent = label;
+        startValueEl.classList.remove('is-placeholder');
+
+        // Keep Time End at least 1 hour after Time Start.
+        var currentEndLabel = endValueEl.textContent;
+        var isEndPlaceholder = endValueEl.classList.contains('is-placeholder');
+        var endMinutes = null;
+        if (!isEndPlaceholder){
+          var endMatch = currentEndLabel.match(/(\d+):(\d+)\s*(AM|PM)/i);
+          if (endMatch){
+            endMinutes = partsToMinutes(parseInt(endMatch[1], 10), parseInt(endMatch[2], 10), endMatch[3].toUpperCase());
+          }
+        }
+        if (endMinutes === null || effectiveEndMinutes(startMinutes, endMinutes) < startMinutes + MIN_DURATION_MINUTES){
+          var newEndMinutes = startMinutes + MIN_DURATION_MINUTES;
+          var endParts = minutesToParts(newEndMinutes);
+          endValueEl.textContent = formatLabel(endParts.hour12, endParts.minute, endParts.period);
+          endValueEl.classList.remove('is-placeholder');
+        }
+      } else if (activeField === 'end'){
+        // Enforce minimum 1-hour duration relative to Start, if Start is set.
+        // End is allowed to roll past midnight (e.g. Start 11:00 PM, End 1:00 AM).
+        if (startMinutes !== null && effectiveEndMinutes(startMinutes, totalMinutes) < startMinutes + MIN_DURATION_MINUTES){
+          totalMinutes = startMinutes + MIN_DURATION_MINUTES;
+          var clampedParts = minutesToParts(totalMinutes);
+          label = formatLabel(clampedParts.hour12, clampedParts.minute, clampedParts.period);
+        }
+        endValueEl.textContent = label;
+        endValueEl.classList.remove('is-placeholder');
+      }
+
+      closeSheet();
+    });
+
+    registerDropdownCloser(closeSheet);
+  })();
+
+  // ---------- Paste button (Google Maps / Waze link fields) ----------
+  // Reads the link straight from the clipboard so users don't have to
+  // long-press into the field on mobile. Falls back to just focusing the
+  // field (native paste still works via keyboard/context menu) if the
+  // Clipboard API is unavailable or permission is denied.
+  document.querySelectorAll('.field-action-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var input = document.getElementById(btn.dataset.pasteTarget);
+      if (!input) return;
+
+      if (navigator.clipboard && navigator.clipboard.readText){
+        navigator.clipboard.readText().then(function(text){
+          if (text) input.value = text.trim();
+          input.focus();
+        }).catch(function(){
+          input.focus();
+        });
+      } else {
+        input.focus();
+      }
+    });
+  });
+
+  // ---------- Title required-field validation reset ----------
+  (function(){
+    var titleEl = document.getElementById('title-input');
+    if (!titleEl) return;
+    titleEl.addEventListener('input', function(){
+      titleEl.classList.remove('is-invalid');
+    });
+  })();
+
+  // ---------- Auto-grow Description textarea (hug content, no scroll) ----------
+  (function(){
+    var textarea = document.getElementById('description-field');
+    if (!textarea) return;
+
+    function resize(){
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    textarea.addEventListener('input', resize);
+    window.addEventListener('load', resize);
+    resize();
+  })();
+
+  // ---------- CTA ----------
+  // Gathers the fields the Game Details page needs and hands them off via a
+  // URL query param — these are static prototype pages with no backend/
+  // database, so the query string is the hand-off mechanism instead.
+  document.getElementById('create-game-btn').addEventListener('click', function(){
+    var titleEl = document.getElementById('title-input');
+    var dateEl = document.getElementById('date-trigger-value');
+    var startEl = document.getElementById('time-start-value');
+    var endEl = document.getElementById('time-end-value');
+    var venueEl = document.getElementById('venue-input');
+    var mapsLinkEl = document.getElementById('maps-link-input');
+    var wazeLinkEl = document.getElementById('waze-link-input');
+    var shuttleEl = document.getElementById('shuttle-input');
+    var descriptionEl = document.getElementById('description-field');
+    var participantsEl = document.getElementById('participants-input');
+    var suggestionEl = document.getElementById('participants-suggestion-value');
+    var courtCountEl = document.getElementById('court-count-value');
+    var courtNumberSummaryEl = document.getElementById('court-number-summary');
+    var priceSummaryEl = document.getElementById('price-summary');
+    var typeGridEl = document.getElementById('type-grid');
+
+    if (!titleEl.value.trim()){
+      titleEl.classList.add('is-invalid');
+      titleEl.focus();
+      return;
+    }
+    titleEl.classList.remove('is-invalid');
+
+    var courtNumbers = (courtNumberSummaryEl.textContent || '')
+      .split(',')
+      .map(function(s){ return s.trim(); })
+      .filter(Boolean);
+
+    var participantsTotal = parseInt(participantsEl.value, 10);
+    if (!participantsTotal){
+      participantsTotal = parseInt(suggestionEl.textContent, 10) || 16;
+    }
+
+    var types = Array.prototype.slice.call(typeGridEl.querySelectorAll('.type-card.selected'))
+      .map(function(card){ return card.dataset.type; });
+
+    var data = {
+      title: titleEl.value.trim(),
+      date: dateEl.classList.contains('is-placeholder') ? '' : dateEl.textContent,
+      timeStart: startEl.classList.contains('is-placeholder') ? '' : startEl.textContent,
+      timeEnd: endEl.classList.contains('is-placeholder') ? '' : endEl.textContent,
+      venue: venueEl.value.trim(),
+      mapsLink: mapsLinkEl.value.trim(),
+      wazeLink: wazeLinkEl.value.trim(),
+      courtCount: parseInt(courtCountEl.textContent, 10) || 0,
+      courtNumbers: courtNumbers,
+      shuttle: shuttleEl.value.trim(),
+      priceSummary: priceSummaryEl.textContent.trim(),
+      description: descriptionEl.value.trim(),
+      participantsTotal: participantsTotal,
+      types: types
+    };
+
+    window.location.href = 'game-details.html?data=' + encodeURIComponent(JSON.stringify(data));
+  });
+</script>
+
+</body>
+</html>

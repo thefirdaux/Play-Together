@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Play Together — Game Details</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-bg: #E7E7E7;
+    --color-surface: #FFFFFF;
+    --color-ink: #171717;
+    --color-ink-soft: #6B6B6B;
+    --color-placeholder: #A3A3A3;
+    --color-border: #E5E5E5;
+    --color-primary: #153320;
+    --color-accent: #D6E84B;
+    --color-accent-soft: #C9D8B8;
+    --color-icon-fill: #9C9C9C;
+    --color-icon-fill-soft: #C4C4C4;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
+
+    --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+
+    --fs-h1: 30px;
+    --fs-h2: 15px;
+    --fs-body: 15px;
+    --fs-small: 13px;
+    --fs-caption: 12px;
+
+    --frame-min: 393px;
+    --frame-max: 700px;
+
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+    font-family: var(--font-body);
+    color: var(--color-ink);
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+    touch-action: pan-y;
+  }
+
+  body{
+    display: flex;
+    justify-content: center;
+    min-width: var(--frame-min);
+  }
+
+  .frame{
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    background: var(--color-bg);
+    position: relative;
+    padding-bottom: 120px;
+  }
+
+  /* ---------- Header ---------- */
+  .header{
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-8) var(--space-5) var(--space-2);
+  }
+
+  .logo-badge{
+    width: 40px;
+    height: 40px;
+    border-radius: 6.4px;
+    background: #E4FF3A;
+    border: 0.4px solid #000000;
+    color: #143622;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', var(--font-display);
+    font-weight: 700;
+    font-size: 25.6px;
+    line-height: normal;
+    flex-shrink: 0;
+    min-height: 0;
+  }
+
+  .brand-name{
+    font-weight: 800;
+    font-size: 18px;
+    text-align: left;
+    font-family: var(--font-display);
+  }
+
+  /* ---------- Status banner ---------- */
+  .status-banner{
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-2) var(--space-5) 0;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-card);
+  }
+
+  .status-banner-icon{
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .status-banner-text{
+    font-size: var(--fs-body);
+    color: var(--color-ink);
+  }
+
+  .status-banner-text strong{
+    font-weight: 700;
+  }
+
+  /* ---------- Game meta (category / title) ---------- */
+  .game-meta{
+    padding: var(--space-6) var(--space-5) 0;
+  }
+
+  .game-category{
+    font-size: var(--fs-small);
+    color: var(--color-ink-soft);
+    margin: 0 0 var(--space-1);
+  }
+
+  .game-title{
+    font-family: var(--font-sf);
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.25;
+    letter-spacing: -0.26px;
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  .tag-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5) 0;
+  }
+
+  .tag-pill{
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-size: var(--fs-small);
+    font-weight: 700;
+    padding: 6px 16px;
+    border-radius: var(--radius-pill);
+  }
+
+  /* ---------- Section ---------- */
+  .section{
+    padding: var(--space-7) var(--space-5) 0;
+  }
+
+  .section-label{
+    font-size: var(--fs-h2);
+    font-weight: 700;
+    margin: 0 0 var(--space-3);
+    color: var(--color-ink);
+  }
+
+  .card{
+    background: var(--color-surface);
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+    padding: 0;
+  }
+
+  .row-group > *:not(:last-child){
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .row-group > *:first-child{
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  .row-group > *:last-child{
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  /* ---------- Info rows (Date/Time, Venue, Court, Shuttle, Price) ---------- */
+  .info-row{
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+
+  .info-row-icon{
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .info-row-body{
+    flex: 1;
+    min-width: 0;
+  }
+
+  .info-row-primary{
+    font-size: var(--fs-body);
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+
+  .info-row-primary.is-regular{
+    font-weight: 400;
+  }
+
+  .info-row-sub{
+    font-size: var(--fs-small);
+    color: var(--color-ink-soft);
+    margin-top: 2px;
+  }
+
+  .info-row-trailing{
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+  }
+
+  button.info-row-trailing{
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button.info-row-trailing:disabled{
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  /* ---------- Rules card ---------- */
+  .rules-row{
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+
+  .rules-icon{
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+
+  .rules-text{
+    font-size: var(--fs-small);
+    line-height: 1.65;
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  .rules-text p{
+    margin: 0 0 var(--space-4);
+  }
+
+  .rules-text p:last-child{
+    margin-bottom: 0;
+  }
+
+  /* ---------- Joined ---------- */
+  .avatar-grid{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-6) var(--space-3);
+    padding: var(--space-5);
+  }
+
+  .avatar-slot{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .avatar-circle{
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-placeholder);
+  }
+
+  .avatar-circle.is-empty{
+    background: transparent;
+    border: 1.5px dashed var(--color-border);
+  }
+
+  .avatar-name{
+    font-size: var(--fs-small);
+    font-weight: 700;
+    color: var(--color-ink);
+    margin-top: var(--space-2);
+  }
+
+  .avatar-role{
+    font-size: 11px;
+    color: var(--color-placeholder);
+    margin-top: 1px;
+  }
+
+  /* ---------- Waiting list ---------- */
+  .waiting-hint{
+    padding: var(--space-4);
+    font-size: var(--fs-small);
+    line-height: 1.5;
+    color: var(--color-ink-soft);
+    margin: 0;
+  }
+
+  /* ---------- CTA ---------- */
+  .cta-wrap{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .cta-inner{
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    padding: var(--space-6) var(--space-5);
+    background: linear-gradient(to top, var(--color-bg) 60%, transparent);
+    pointer-events: auto;
+  }
+
+  .cta-button{
+    width: 100%;
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cta-button:active{
+    opacity: 0.85;
+  }
+
+  /* ---------- Navigate options bottom sheet ---------- */
+  .nav-sheet-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    justify-content: center;
+  }
+
+  .nav-sheet-overlay.open{
+    display: flex;
+  }
+
+  .nav-sheet-backdrop{
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .nav-sheet-overlay.open .nav-sheet-backdrop{
+    opacity: 1;
+  }
+
+  .nav-sheet{
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    background: var(--color-surface);
+    border-radius: 20px 20px 0 0;
+    padding: var(--space-3) var(--space-5) var(--space-6);
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.16);
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .nav-sheet-overlay.open .nav-sheet{
+    transform: translateY(0);
+  }
+
+  .nav-sheet-handle{
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--color-border);
+    margin: 0 auto var(--space-3);
+  }
+
+  .nav-sheet-title{
+    text-align: center;
+    font-size: var(--fs-body);
+    font-weight: 700;
+    color: var(--color-ink);
+    margin-bottom: var(--space-4);
+  }
+
+  .nav-option{
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    font-family: var(--font-body);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .nav-option:not(:last-of-type){
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .nav-option:disabled{
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  .nav-option-label{
+    flex: 1;
+    font-size: var(--fs-body);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .nav-option-chevron{
+    color: var(--color-placeholder);
+    flex-shrink: 0;
+  }
+
+  .nav-sheet-cancel{
+    width: 100%;
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: #F2F2F2;
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-size: var(--fs-body);
+    font-weight: 700;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo-badge">Pt</div>
+    <span class="brand-name">Play Together</span>
+  </header>
+
+  <!-- Status banner -->
+  <div class="status-banner">
+    <div class="status-banner-icon">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12.313 5.53097C12.313 2.63097 14.437 1.94797 15.625 1.96897C18.038 1.96897 18.707 3.97797 18.906 5.04697C19.154 6.37697 18.912 9.55597 18.8 11.016L18.797 11.057C18.966 11.0186 19.1387 10.9995 19.312 11H23.17C24.73 11 26 12.27 26 13.83C26 14.636 25.741 15.365 25.235 15.88C26.279 16.341 27 17.308 27 18.424C27 19.447 26.537 20.344 25.636 20.842C26.459 21.353 27 22.208 27 23.174C27 24.281 26.457 25.243 25.402 25.707C25.777 26.093 26 26.667 26 27.501C26 28.881 25.031 30.003 23.17 30.003H19.312C19.2667 30.003 19.222 30.002 19.178 30H16.047C5.609 30.172 5 23.406 5 20.656C5 15.5 7.298 13.967 9.34 12.605C10.306 11.961 11.215 11.355 11.797 10.422C12.285 9.63897 12.312 8.92197 12.312 5.53197" fill="#FFD7C2"/>
+<path d="M19 11C17.98 11.031 15 11.594 15 13.969C15 15.219 15.469 15.922 16.031 16.313C15.469 16.563 14.969 17.491 14.969 18.641C14.969 19.921 16.031 20.859 16.031 20.859C16.031 20.859 14.969 21.891 14.969 23.125C14.969 24.057 15.377 24.745 16.031 25.213C15.677 25.413 14.969 26.106 14.969 27.281C14.969 28.682 16.277 29.856 18.839 29.961C17.591 29.73 16.984 28.586 16.984 27.501C16.984 27.143 17.118 26.567 17.451 26.059H23C23.1326 26.059 23.2598 26.0063 23.3535 25.9126C23.4473 25.8188 23.5 25.6916 23.5 25.559C23.5 25.4264 23.4473 25.2992 23.3535 25.2054C23.2598 25.1117 23.1326 25.059 23 25.059H17.589C17.184 24.529 16.984 23.841 16.984 23.174C16.984 22.758 17.141 22.086 17.53 21.5H23C23.1326 21.5 23.2598 21.4473 23.3535 21.3536C23.4473 21.2598 23.5 21.1326 23.5 21C23.5 20.8674 23.4473 20.7402 23.3535 20.6464C23.2598 20.5527 23.1326 20.5 23 20.5H17.75C17.237 19.95 16.984 19.175 16.984 18.424C16.984 18.067 17.1 17.519 17.38 17H23C23.1326 17 23.2598 16.9473 23.3535 16.8536C23.4473 16.7598 23.5 16.6326 23.5 16.5C23.5 16.3674 23.4473 16.2402 23.3535 16.1464C23.2598 16.0527 23.1326 16 23 16H17.827C17.263 15.403 16.984 14.516 16.984 13.83C16.984 13.02 17.427 11.23 19 11.02V11Z" fill="#F1B99B"/>
+</svg>
+    </div>
+    <div class="status-banner-text"><strong>Game is on!</strong> Slots are still available</div>
+  </div>
+
+  <!-- Game meta -->
+  <section class="game-meta">
+    <p class="game-category">McMinton</p>
+    <h1 class="game-title">47th McMinton Session 2026</h1>
+  </section>
+
+  <div class="tag-row">
+    <span class="tag-pill">Social</span>
+    <span class="tag-pill">Sparring</span>
+  </div>
+
+  <!-- Game info card -->
+  <section class="section">
+    <div class="card row-group">
+      <div class="info-row">
+        <div class="info-row-icon">
+          <svg width="40" height="40" viewBox="0 -960 960 960" fill="#143522"><path d="M280-413.33V-480h400v66.67H280ZM280-240v-66.67h279.33V-240H280ZM186.67-80q-27 0-46.84-19.83Q120-119.67 120-146.67v-600q0-27 19.83-46.83 19.84-19.83 46.84-19.83h56.66V-880h70v66.67h333.34V-880h70v66.67h56.66q27 0 46.84 19.83Q840-773.67 840-746.67v600q0 27-19.83 46.84Q800.33-80 773.33-80H186.67Zm0-66.67h586.66v-420H186.67v420Z"/></svg>
+        </div>
+        <div class="info-row-body">
+          <div class="info-row-primary" id="info-datetime">Date / Day, Time start - Time End</div>
+          <div class="info-row-sub">One-time activity</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-row-icon">
+          <svg width="40" height="40" viewBox="0 -960 960 960" fill="#143522"><path d="M531.83-508.23q21.5-21.55 21.5-51.83 0-30.27-21.56-51.77-21.55-21.5-51.83-21.5-30.27 0-51.77 21.56-21.5 21.55-21.5 51.83 0 30.27 21.56 51.77 21.55 21.5 51.83 21.5 30.27 0 51.77-21.56ZM480-80Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"/></svg>
+        </div>
+        <div class="info-row-body">
+          <div class="info-row-primary is-regular" id="info-venue">Venue</div>
+        </div>
+        <button class="info-row-trailing" id="navigate-trigger" type="button" aria-haspopup="dialog" aria-label="Navigate to venue">
+          <svg width="40" height="40" viewBox="0 0 32 32" fill="none"><path d="M16.1825 3.00121C8.87121 2.90246 2.90246 8.87121 3.00121 16.1825C3.09871 23.1943 8.80808 28.9037 15.82 29.0012C23.1325 29.1012 29.1 23.1325 29 15.8212C28.9037 8.80808 23.1943 3.09871 16.1825 3.00121ZM21.9387 10.9537L16.7987 22.6112C16.4993 23.2656 15.5 23.0487 15.5 22.3262V16.7512C15.5 16.6849 15.4736 16.6213 15.4267 16.5744C15.3799 16.5275 15.3163 16.5012 15.25 16.5012H9.67621C8.95621 16.5012 8.73871 15.5093 9.39058 15.2093L21.0487 10.0637C21.1733 10.0062 21.3125 9.98825 21.4475 10.0123C21.5826 10.0364 21.7071 10.1013 21.8041 10.1983C21.9011 10.2954 21.966 10.4198 21.9901 10.5549C22.0142 10.6899 21.9962 10.8291 21.9387 10.9537Z" fill="#143522"/></svg>
+        </button>
+      </div>
+
+      <div class="info-row">
+        <div class="info-row-icon">
+          <svg width="40" height="40" viewBox="0 0 32 32" fill="none"><path d="M7.25688 2L5.18062 11H6.33812L8.15687 3.125H9.29437L8.00688 11H9.15063L9.78187 7.125H15.1444V11H16.2694V7.125H21.6319L22.2631 11H23.4069L22.1194 3.125H23.2569L25.0756 11H26.2319L24.1569 2H7.25688ZM10.4381 3.125H20.9756L21.4506 6H9.96313L10.4381 3.125ZM4.26937 12.125V14H27.1444V12.125H4.26937ZM4.22937 15.125L1 29.125H30.4131L27.1819 15.125H26.0256L29.0006 28H26.1881L24.0819 15.125H22.9381L23.8256 20.5625H16.2694V15.125H15.1444V20.5625H7.58812L8.47563 15.125H7.33187L5.22875 28H2.41375L5.38625 15.125H4.22937ZM7.40062 21.6875H24.0131L25.0444 28H6.36937L7.40062 21.6875Z" fill="#143522"/></svg>
+        </div>
+        <div class="info-row-body">
+          <div class="info-row-primary" id="info-court-count">0 court booked</div>
+          <div class="info-row-sub" id="info-court-numbers">Court number</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-row-icon">
+          <svg width="40" height="40" viewBox="0 0 32 32" fill="none"><path d="M18.1468 24.785L17.7068 25.7961C17.1425 27.0931 16.086 28.1128 14.7698 28.6309C13.4536 29.149 11.9855 29.123 10.6885 28.5586C9.39144 27.9942 8.37173 26.9377 7.85367 25.6215C7.3356 24.3053 7.36161 22.8372 7.92598 21.5402L8.36593 20.5291L8.38217 20.2846L18.3134 24.606L18.1468 24.785ZM28.0318 7.02334C30.3767 8.04369 31.0042 11.0795 29.2531 12.9451L20.2515 22.5411L8.57198 17.459L9.45912 4.33223C9.51461 3.51643 9.83888 2.74202 10.3812 2.13008C10.9235 1.51813 11.6534 1.10315 12.4566 0.950019C13.2598 0.796887 14.0911 0.914236 14.8206 1.28372C15.55 1.6532 16.1364 2.25398 16.4882 2.99214C17.348 2.72377 18.2758 2.77528 19.1006 3.13718C19.9503 3.50691 20.5931 4.15159 20.9734 4.92193C21.8241 4.66405 22.739 4.71821 23.5533 5.07467C24.4214 5.45238 25.0673 6.11004 25.4426 6.88841C26.2936 6.61902 27.2134 6.66696 28.0318 7.02334Z" fill="#143522"/></svg>
+        </div>
+        <div class="info-row-body">
+          <div class="info-row-primary is-regular" id="info-shuttle">Shuttle brand/model</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-row-icon">
+          <svg width="40" height="40" viewBox="0 -960 960 960" fill="#143522"><path d="M448.67-195.33h60v-51.34q57.33-7.66 92-38 34.66-30.33 34.66-84 0-48-27.33-81t-97.33-61Q452-533.33 427-551q-25-17.67-25-47.67Q402-628 423.17-645q21.16-17 58.83-17 30.67 0 51.33 14.5Q554-633 566.67-606.67l53.33-24q-15-35-43.5-57t-65.83-25.66V-764h-60v50.67Q400-705 371-673.67q-29 31.34-29 75 0 48.34 29.17 77.34 29.16 29 88.83 52.66 65.67 26.34 90.5 47.34 24.83 21 24.83 52.66 0 32.34-25.5 50.5Q524.33-300 486.67-300q-37 0-65.84-21.5Q392-343 380-382l-56 20q18.67 46.67 48.83 74.17 30.17 27.5 75.84 39.16v53.34ZM480-80q-82.33 0-155.33-31.5-73-31.5-127.34-85.83Q143-251.67 111.5-324.67T80-480q0-83 31.5-156t85.83-127q54.34-54 127.34-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 82.33-31.5 155.33-31.5 73-85.5 127.34Q709-143 636-111.5T480-80Z"/></svg>
+        </div>
+        <div class="info-row-body">
+          <div class="info-row-primary" id="info-price">Free</div>
+        </div>
+        <div class="info-row-trailing">
+          <svg width="40" height="40" viewBox="0 0 32 32" fill="none"><path d="M5.66667 5.66667H11.0133V3H3V11H5.66667V5.66667ZM5.66667 21.6667H3V29.6667H11.0133V27H5.66667V21.6667ZM27 27H21.6667V29.6667H29.6667V21.6667H27V27ZM21.6667 5.66667H27V11H29.6667V3H21.6667V5.66667Z" fill="#143522"/><path d="M7 15H15V7H7V15ZM9.66667 9.66667H12.3333V12.3333H9.66667V9.66667ZM7 25.6667H15V17.6667H7V25.6667ZM9.66667 20.3333H12.3333V23H9.66667V20.3333ZM25.6667 7H17.6667V15H25.6667V7ZM23 12.3333H20.3333V9.66667H23V12.3333ZM17.68 17.6667H20.3467V20.3333H17.68V17.6667ZM20.3467 20.3333H23.0133V23H20.3467V20.3333ZM23.0133 23H25.68V25.6667H23.0133V23ZM23.0133 17.6667H25.68V20.3333H23.0133V17.6667Z" fill="#143522"/></svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Rules card -->
+  <section class="section">
+    <div class="card">
+      <div class="rules-row">
+        <div class="rules-icon">
+          <svg width="40" height="40" viewBox="0 -960 960 960" fill="#143522"><path d="M319.33-245.35h321.34v-73.64H319.33v73.64Zm0-166.66h321.34v-73.64H319.33v73.64ZM232.32-64.17q-36.44 0-62.29-25.86-25.86-25.85-25.86-62.29v-655.36q0-36.6 25.86-62.56 25.85-25.96 62.29-25.96h348.46L816.2-660.78v508.46q0 36.44-25.96 62.29-25.96 25.86-62.56 25.86H232.32Zm302.69-552.84v-190.67H232.32v655.36h495.36v-464.69H535.01ZM232.32-807.68v190.67-190.67 655.36-655.36Z"/></svg>
+        </div>
+        <div class="rules-text" id="info-description">
+          <p>NO JOY PLAYERS<br>JANGAN MAIN BERTURUT - TURUT<br>CANCELLATION ONLY IF GOT REPLACEMENT.<br>LUCKY DRAW EVERY WEEK</p>
+          <p>Please be considerate and refrain yourself from playing consecutively.<br>Sila bertimbang rasa dan tidak digalakkan main berturut-turut. Main ikut court yang telah dinyatakan.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Joined -->
+  <section class="section">
+    <h2 class="section-label" id="joined-header">Joined ( 0/16)</h2>
+    <div class="card">
+      <div class="avatar-grid" id="avatar-grid"></div>
+    </div>
+  </section>
+
+  <!-- Waiting list -->
+  <section class="section">
+    <h2 class="section-label">Waiting list (0)</h2>
+    <div class="card">
+      <p class="waiting-hint">If someone who is already in leaves, then the next person in the waitlist joins automatically.</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- CTA -->
+<div class="cta-wrap">
+  <div class="cta-inner">
+    <button class="cta-button" id="share-game-btn">Share game</button>
+  </div>
+</div>
+
+<!-- Navigate options bottom sheet -->
+<div class="nav-sheet-overlay" id="nav-sheet-overlay" aria-hidden="true">
+  <div class="nav-sheet-backdrop" id="nav-sheet-backdrop"></div>
+  <div class="nav-sheet" id="nav-sheet" role="dialog" aria-modal="true" aria-label="Navigate with">
+    <div class="nav-sheet-handle"></div>
+    <div class="nav-sheet-title">Navigate with</div>
+
+    <button class="nav-option" id="nav-option-gmaps" type="button" disabled>
+      <span class="nav-option-label">Google Maps</span>
+      <svg class="nav-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="nav-option" id="nav-option-waze" type="button" disabled>
+      <span class="nav-option-label">Waze</span>
+      <svg class="nav-option-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+
+    <button class="nav-sheet-cancel" id="nav-sheet-cancel" type="button">Cancel</button>
+  </div>
+</div>
+
+<script>
+  // ---------- Populate from Create list page ----------
+  // Data is handed off via a URL query param since these are static
+  // prototype pages with no backend/router (see index.html's
+  // create-game-btn handler).
+  (function(){
+    var raw = new URLSearchParams(window.location.search).get('data');
+    if (!raw) return;
+
+    var data;
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      return;
+    }
+
+    function joinWithAnd(list){
+      if (list.length === 0) return '';
+      if (list.length === 1) return list[0];
+      if (list.length === 2) return list[0] + ' & ' + list[1];
+      return list.slice(0, -1).join(', ') + ' & ' + list[list.length - 1];
+    }
+
+    // Turns *word* into <strong>word</strong>. Run this AFTER escaping HTML
+    // entities so the asterisks can only ever produce a <strong> tag, never
+    // arbitrary markup from user input.
+    function applyBoldMarkup(escapedText){
+      return escapedText.replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+    }
+
+    // Title
+    if (data.title){
+      document.querySelector('.game-title').textContent = data.title;
+    }
+
+    // Type of game tags
+    var tagRow = document.querySelector('.tag-row');
+    if (data.types && data.types.length){
+      tagRow.innerHTML = '';
+      data.types.forEach(function(type){
+        var pill = document.createElement('span');
+        pill.className = 'tag-pill';
+        pill.textContent = type;
+        tagRow.appendChild(pill);
+      });
+    }
+
+    // Date / Time
+    var datetimeEl = document.getElementById('info-datetime');
+    var datetimeParts = [];
+    if (data.date) datetimeParts.push(data.date);
+    if (data.timeStart && data.timeEnd){
+      datetimeParts.push(data.timeStart + ' - ' + data.timeEnd);
+    } else if (data.timeStart || data.timeEnd){
+      datetimeParts.push(data.timeStart || data.timeEnd);
+    }
+    datetimeEl.textContent = datetimeParts.length ? datetimeParts.join(', ') : 'Date and time not set';
+
+    // Venue
+    var venueEl = document.getElementById('info-venue');
+    venueEl.textContent = data.venue || 'Venue not set';
+
+    // Court
+    var courtCountEl = document.getElementById('info-court-count');
+    var courtNumbersEl = document.getElementById('info-court-numbers');
+    var courtCount = data.courtCount || 0;
+    if (courtCount > 0){
+      courtCountEl.textContent = courtCount + ' court booked';
+      var numbers = (data.courtNumbers && data.courtNumbers.length)
+        ? data.courtNumbers
+        : Array.from({ length: courtCount }, function(_, i){ return String(i + 1); });
+      courtNumbersEl.textContent = 'Court ' + joinWithAnd(numbers);
+    } else {
+      courtCountEl.textContent = 'No court booked';
+      courtNumbersEl.textContent = '';
+    }
+
+    // Shuttle
+    var shuttleEl = document.getElementById('info-shuttle');
+    shuttleEl.textContent = data.shuttle || 'No shuttle info provided';
+
+    // Price
+    var priceEl = document.getElementById('info-price');
+    priceEl.textContent = data.priceSummary || 'Free';
+
+    // Description / rules
+    var descriptionEl = document.getElementById('info-description');
+    if (data.description){
+      descriptionEl.innerHTML = '';
+      data.description.split(/\n\s*\n/).forEach(function(paragraph){
+        var p = document.createElement('p');
+        p.innerHTML = paragraph.split('\n').map(function(line){
+          var escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          return applyBoldMarkup(escaped);
+        }).join('<br>');
+        descriptionEl.appendChild(p);
+      });
+    } else {
+      descriptionEl.innerHTML = '<p>No description provided.</p>';
+    }
+
+    // Joined (starts empty — nobody has joined yet)
+    var total = data.participantsTotal || 16;
+    document.getElementById('joined-header').textContent = 'Joined ( 0/' + total + ')';
+    var grid = document.getElementById('avatar-grid');
+    grid.innerHTML = '';
+    for (var i = 0; i < total; i++){
+      var slot = document.createElement('div');
+      slot.className = 'avatar-slot';
+      var circle = document.createElement('div');
+      circle.className = 'avatar-circle is-empty';
+      slot.appendChild(circle);
+      grid.appendChild(slot);
+    }
+  })();
+
+  // ---------- Navigate options bottom sheet ----------
+  // The Navigate icon on the Venue row opens a sheet letting the user pick
+  // Google Maps or Waze, using whichever links were pasted on the Create
+  // list page (handed off via the same "data" query param).
+  (function(){
+    var trigger = document.getElementById('navigate-trigger');
+    var overlay = document.getElementById('nav-sheet-overlay');
+    var backdrop = document.getElementById('nav-sheet-backdrop');
+    var cancelBtn = document.getElementById('nav-sheet-cancel');
+    var gmapsBtn = document.getElementById('nav-option-gmaps');
+    var wazeBtn = document.getElementById('nav-option-waze');
+
+    if (!trigger || !overlay) return;
+
+    var raw = new URLSearchParams(window.location.search).get('data');
+    var data = {};
+    if (raw){
+      try { data = JSON.parse(raw); } catch (e) { data = {}; }
+    }
+
+    var mapsLink = (data.mapsLink || '').trim();
+    var wazeLink = (data.wazeLink || '').trim();
+
+    gmapsBtn.disabled = !mapsLink;
+    wazeBtn.disabled = !wazeLink;
+
+    // If neither link was provided, there's nothing to navigate with —
+    // don't show an empty/all-disabled sheet.
+    if (!mapsLink && !wazeLink){
+      trigger.disabled = true;
+      return;
+    }
+
+    function openSheet(){
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeSheet(){
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    trigger.addEventListener('click', openSheet);
+    backdrop.addEventListener('click', closeSheet);
+    cancelBtn.addEventListener('click', closeSheet);
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && overlay.classList.contains('open')){
+        closeSheet();
+      }
+    });
+
+    gmapsBtn.addEventListener('click', function(){
+      if (!mapsLink) return;
+      window.open(mapsLink, '_blank', 'noopener');
+      closeSheet();
+    });
+
+    wazeBtn.addEventListener('click', function(){
+      if (!wazeLink) return;
+      window.open(wazeLink, '_blank', 'noopener');
+      closeSheet();
+    });
+  })();
+
+  // ---------- Share game ----------
+  // Uses the device's native share sheet when available (mobile browsers);
+  // falls back to copying the game link to the clipboard on desktop.
+  (function(){
+    var btn = document.getElementById('share-game-btn');
+    if (!btn) return;
+
+    var originalLabel = btn.textContent;
+
+    function getShareData(){
+      var titleEl = document.querySelector('.game-title');
+      return {
+        title: titleEl ? titleEl.textContent : 'Play Together',
+        text: 'Join this game on Play Together!',
+        url: window.location.href
+      };
+    }
+
+    function flashLabel(text){
+      btn.textContent = text;
+      setTimeout(function(){
+        btn.textContent = originalLabel;
+      }, 1500);
+    }
+
+    btn.addEventListener('click', function(){
+      if (navigator.share){
+        navigator.share(getShareData()).catch(function(){});
+        return;
+      }
+
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(window.location.href)
+          .then(function(){ flashLabel('Link copied!'); })
+          .catch(function(){});
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

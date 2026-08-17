@@ -811,14 +811,20 @@
   // prototype pages with no backend/router (see index.html's
   // create-game-btn handler and game-details.html's Share game link).
   (function(){
+    // Falls back to an empty object (rather than bailing out) when there's
+    // no "data" param or it fails to parse, so the avatar grid below still
+    // gets populated with default empty slots. Without this, opening the
+    // page with a missing/broken link would leave the grid with zero
+    // slots — silently breaking the Join flow (it would always fall
+    // through to the waiting list, since there'd be no empty slot to fill).
     var raw = new URLSearchParams(window.location.search).get('data');
-    if (!raw) return;
-
-    var data;
-    try {
-      data = JSON.parse(raw);
-    } catch (e) {
-      return;
+    var data = {};
+    if (raw){
+      try {
+        data = JSON.parse(raw);
+      } catch (e) {
+        data = {};
+      }
     }
 
     function joinWithAnd(list){

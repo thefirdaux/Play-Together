@@ -843,15 +843,65 @@
   // and shouldn't be what invited players land on. Uses the device's
   // native share sheet when available (mobile browsers); falls back to
   // copying the link to the clipboard on desktop.
+  //
+  // The link is built to be much shorter than the raw "?data=<JSON>" this
+  // page itself was opened with: object keys are minified (title -> t,
+  // venue -> v, etc.) and the JSON is base64url-encoded instead of
+  // percent-encoded (JSON's quotes/braces/commas each cost 3 characters
+  // under encodeURIComponent — %22, %7B, %2C — but are single bytes under
+  // base64). A readable slug of the game title is included as a separate
+  // "n" param purely so the URL is recognizable at a glance; it isn't
+  // read back by game-title.html.
   (function(){
     var btn = document.getElementById('share-game-btn');
     if (!btn) return;
 
     var originalLabel = btn.textContent;
 
+    var SHORT_KEYS = {
+      title: 't', date: 'd', timeStart: 'ts', timeEnd: 'te', venue: 'v',
+      mapsLink: 'ml', wazeLink: 'wl', courtCount: 'cc', courtNumbers: 'cn',
+      shuttle: 'sh', priceSummary: 'p', description: 'de',
+      participantsTotal: 'pt', types: 'ty'
+    };
+
+    function toBase64Url(str){
+      var b64 = btoa(unescape(encodeURIComponent(str)));
+      return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function encodeGameData(data){
+      var compact = {};
+      Object.keys(SHORT_KEYS).forEach(function(key){
+        var val = data[key];
+        if (val === undefined || val === null || val === '') return;
+        if (Array.isArray(val) && val.length === 0) return;
+        compact[SHORT_KEYS[key]] = val;
+      });
+      return toBase64Url(JSON.stringify(compact));
+    }
+
+    function slugify(text){
+      return (text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60);
+    }
+
     function getShareUrl(){
+      var raw = new URLSearchParams(window.location.search).get('data');
+      var data = {};
+      if (raw){
+        try { data = JSON.parse(raw); } catch (e) { data = {}; }
+      }
+
+      var titleEl = document.querySelector('.game-title');
+      var slug = slugify(titleEl ? titleEl.textContent : '') || 'game';
+
       var joinUrl = new URL('game-title.html', window.location.href);
-      joinUrl.search = window.location.search;
+      joinUrl.searchParams.set('n', slug);
+      joinUrl.searchParams.set('g', encodeGameData(data));
       return joinUrl.toString();
     }
 

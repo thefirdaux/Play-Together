@@ -806,26 +806,61 @@
 </div>
 
 <script>
-  // ---------- Populate from Create list page ----------
-  // Data is handed off via a URL query param since these are static
-  // prototype pages with no backend/router (see index.html's
-  // create-game-btn handler and game-details.html's Share game link).
-  (function(){
-    // Falls back to an empty object (rather than bailing out) when there's
-    // no "data" param or it fails to parse, so the avatar grid below still
-    // gets populated with default empty slots. Without this, opening the
-    // page with a missing/broken link would leave the grid with zero
-    // slots — silently breaking the Join flow (it would always fall
-    // through to the waiting list, since there'd be no empty slot to fill).
-    var raw = new URLSearchParams(window.location.search).get('data');
+  // ---------- Read game data from the URL ----------
+  // game-details.html's Share game button links here with a short, compact
+  // "g" param: object keys minified (title -> t, venue -> v, etc.) and the
+  // JSON base64url-encoded instead of percent-encoded, since JSON's quotes/
+  // braces/commas each cost 3 characters under encodeURIComponent but are
+  // single bytes under base64. The old full "data" param (raw JSON, used
+  // by index.html's own handoff to game-details.html) is still supported
+  // as a fallback for robustness.
+  var SHORT_KEYS_REVERSE = {
+    t: 'title', d: 'date', ts: 'timeStart', te: 'timeEnd', v: 'venue',
+    ml: 'mapsLink', wl: 'wazeLink', cc: 'courtCount', cn: 'courtNumbers',
+    sh: 'shuttle', p: 'priceSummary', de: 'description',
+    pt: 'participantsTotal', ty: 'types'
+  };
+
+  function fromBase64Url(str){
+    var b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    return decodeURIComponent(escape(atob(b64)));
+  }
+
+  function decodeCompactGameData(encoded){
+    var compact = JSON.parse(fromBase64Url(encoded));
     var data = {};
-    if (raw){
-      try {
-        data = JSON.parse(raw);
-      } catch (e) {
-        data = {};
-      }
+    Object.keys(compact).forEach(function(key){
+      data[SHORT_KEYS_REVERSE[key] || key] = compact[key];
+    });
+    return data;
+  }
+
+  // Falls back to an empty object (rather than throwing/bailing) when
+  // there's no usable param or it fails to decode, so the avatar grid
+  // still gets populated with default empty slots. Without this, opening
+  // the page with a missing/broken link would leave the grid with zero
+  // slots — silently breaking the Join flow (it would always fall through
+  // to the waiting list, since there'd be no empty slot to fill).
+  function readGameDataFromUrl(){
+    var params = new URLSearchParams(window.location.search);
+
+    var compact = params.get('g');
+    if (compact){
+      try { return decodeCompactGameData(compact); } catch (e) { /* fall through */ }
     }
+
+    var legacy = params.get('data');
+    if (legacy){
+      try { return JSON.parse(legacy); } catch (e) { /* fall through */ }
+    }
+
+    return {};
+  }
+
+  // ---------- Populate from Create list page ----------
+  (function(){
+    var data = readGameDataFromUrl();
 
     function joinWithAnd(list){
       if (list.length === 0) return '';
@@ -930,7 +965,7 @@
   // ---------- Navigate options bottom sheet ----------
   // The Navigate icon on the Venue row opens a sheet letting the user pick
   // Google Maps or Waze, using whichever links were pasted on the Create
-  // list page (handed off via the same "data" query param).
+  // list page.
   (function(){
     var trigger = document.getElementById('navigate-trigger');
     var overlay = document.getElementById('nav-sheet-overlay');
@@ -941,11 +976,7 @@
 
     if (!trigger || !overlay) return;
 
-    var raw = new URLSearchParams(window.location.search).get('data');
-    var data = {};
-    if (raw){
-      try { data = JSON.parse(raw); } catch (e) { data = {}; }
-    }
+    var data = readGameDataFromUrl();
 
     var mapsLink = (data.mapsLink || '').trim();
     var wazeLink = (data.wazeLink || '').trim();

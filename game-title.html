@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Play Together — Game Details</title>
+<title>Play Together — Game Title</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
@@ -326,6 +326,12 @@
     height: 56px;
     border-radius: 50%;
     background: var(--color-placeholder);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-surface);
+    font-size: var(--fs-small);
+    font-weight: 700;
   }
 
   .avatar-circle.is-empty{
@@ -391,6 +397,11 @@
 
   .cta-button:active{
     opacity: 0.85;
+  }
+
+  .cta-button:disabled{
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   /* ---------- Navigate options bottom sheet ---------- */
@@ -618,7 +629,7 @@
 
   <!-- Waiting list -->
   <section class="section">
-    <h2 class="section-label">Waiting list (0)</h2>
+    <h2 class="section-label" id="waiting-header">Waiting list (0)</h2>
     <div class="card">
       <p class="waiting-hint">If someone who is already in leaves, then the next person in the waitlist joins automatically.</p>
     </div>
@@ -629,7 +640,7 @@
 <!-- CTA -->
 <div class="cta-wrap">
   <div class="cta-inner">
-    <button class="cta-button" id="share-game-btn">Share game</button>
+    <button class="cta-button" id="join-btn">Join</button>
   </div>
 </div>
 
@@ -657,7 +668,7 @@
   // ---------- Populate from Create list page ----------
   // Data is handed off via a URL query param since these are static
   // prototype pages with no backend/router (see index.html's
-  // create-game-btn handler).
+  // create-game-btn handler and game-details.html's Share game link).
   (function(){
     var raw = new URLSearchParams(window.location.search).get('data');
     if (!raw) return;
@@ -837,51 +848,51 @@
     });
   })();
 
-  // ---------- Share game ----------
-  // Shares a link to game-title.html (the player-facing page with a Join
-  // button) rather than this page — this page is the creator's own view
-  // and shouldn't be what invited players land on. Uses the device's
-  // native share sheet when available (mobile browsers); falls back to
-  // copying the link to the clipboard on desktop.
+  // ---------- Join game ----------
+  // This page is what a recipient lands on after opening a link shared via
+  // game-details.html's "Share game" button. Fills the next open avatar
+  // slot (or, once full, adds to the waiting list) — client-side only,
+  // since these are static prototype pages with no backend to persist to.
   (function(){
-    var btn = document.getElementById('share-game-btn');
+    var btn = document.getElementById('join-btn');
     if (!btn) return;
 
-    var originalLabel = btn.textContent;
-
-    function getShareUrl(){
-      var joinUrl = new URL('game-title.html', window.location.href);
-      joinUrl.search = window.location.search;
-      return joinUrl.toString();
-    }
-
-    function getShareData(){
-      var titleEl = document.querySelector('.game-title');
-      return {
-        title: titleEl ? titleEl.textContent : 'Play Together',
-        text: 'Join this game on Play Together!',
-        url: getShareUrl()
-      };
-    }
-
-    function flashLabel(text){
-      btn.textContent = text;
-      setTimeout(function(){
-        btn.textContent = originalLabel;
-      }, 1500);
-    }
+    var joined = false;
 
     btn.addEventListener('click', function(){
-      if (navigator.share){
-        navigator.share(getShareData()).catch(function(){});
-        return;
+      if (joined) return;
+      joined = true;
+
+      var grid = document.getElementById('avatar-grid');
+      var emptyCircle = grid ? grid.querySelector('.avatar-circle.is-empty') : null;
+
+      if (emptyCircle){
+        emptyCircle.classList.remove('is-empty');
+        emptyCircle.textContent = 'You';
+
+        var name = document.createElement('div');
+        name.className = 'avatar-name';
+        name.textContent = 'You';
+        emptyCircle.parentElement.appendChild(name);
+
+        var joinedHeaderEl = document.getElementById('joined-header');
+        var match = joinedHeaderEl && joinedHeaderEl.textContent.match(/(\d+)\s*\/\s*(\d+)/);
+        if (match){
+          var current = parseInt(match[1], 10) + 1;
+          joinedHeaderEl.textContent = 'Joined ( ' + current + '/' + match[2] + ')';
+        }
+
+        btn.textContent = "You're in!";
+      } else {
+        var waitingHeaderEl = document.getElementById('waiting-header');
+        var wMatch = waitingHeaderEl && waitingHeaderEl.textContent.match(/\((\d+)\)/);
+        var wCount = (wMatch ? parseInt(wMatch[1], 10) : 0) + 1;
+        if (waitingHeaderEl) waitingHeaderEl.textContent = 'Waiting list (' + wCount + ')';
+
+        btn.textContent = "You're on the waiting list";
       }
 
-      if (navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(getShareUrl())
-          .then(function(){ flashLabel('Link copied!'); })
-          .catch(function(){});
-      }
+      btn.disabled = true;
     });
   })();
 </script>

@@ -271,7 +271,9 @@
     background: transparent;
     outline: none;
     font-family: var(--font-body);
-    font-size: var(--fs-body);
+    /* 16px minimum — iOS Safari auto-zooms the page on focus for any
+       text input under 16px. */
+    font-size: max(16px, var(--fs-body));
     color: var(--color-ink);
     padding: var(--space-4);
   }
@@ -604,7 +606,9 @@
     background: #F0F0F0;
     text-align: center;
     font-family: var(--font-body);
-    font-size: var(--fs-small);
+    /* 16px minimum — iOS Safari auto-zooms the page on focus for any
+       text input under 16px. */
+    font-size: max(16px, var(--fs-small));
     color: var(--color-ink);
     outline: none;
   }
@@ -646,7 +650,9 @@
     background: transparent;
     text-align: center;
     font-family: var(--font-body);
-    font-size: var(--fs-small);
+    /* 16px minimum — iOS Safari auto-zooms the page on focus for any
+       text input under 16px. */
+    font-size: max(16px, var(--fs-small));
     color: var(--color-ink);
     outline: none;
   }

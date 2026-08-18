@@ -906,7 +906,10 @@
     // unguessable id for, without RLS having to grant blanket
     // list-every-game access to make that possible.
     var gameResult = await supabase.rpc('get_public_game', { p_game_id: gameId });
-    if (gameResult.error || !gameResult.data){
+    // A "not found" id still returns a row of nulls (this is a scalar
+    // function, not setof), not a null/undefined result — check a
+    // required column instead of just truthiness of the object.
+    if (gameResult.error || !gameResult.data || !gameResult.data.id){
       loadingNoteEl.textContent = 'Game not found, or this link has expired.';
       return;
     }

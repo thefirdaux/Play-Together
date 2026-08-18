@@ -128,14 +128,22 @@ using (auth.uid() = host_id) with check (auth.uid() = host_id);
 
 -- Anyone can read participants of a game (needed to render the roster
 -- on both the public join page and the host's admin view, and because
--- Realtime still evaluates SELECT RLS per change event). Column-level
--- access to `phone` is revoked further below so this can stay broad
--- without exposing everyone's phone numbers to a plain table scan.
+-- Realtime still evaluates SELECT RLS per change event). This is
+-- narrowed to specific columns below so it can stay row-broad without
+-- exposing phone numbers or device_id (which would let a stranger
+-- force-leave someone else's join via leave_game()) to a plain scan.
 create policy "Anyone can view participants"
 on public.participants for select
 using (true);
 
-revoke select (phone) on public.participants from anon, authenticated;
+-- A column-level REVOKE alone does nothing here: Supabase grants
+-- table-level SELECT on public.participants to anon/authenticated by
+-- default, and a broader table-level grant supersedes any narrower
+-- column-level revoke. The table-level grant has to be revoked first,
+-- then re-granted for only the columns the UI actually needs to read
+-- (id/game_id/name/waiting/joined_at — never phone or device_id).
+revoke select on public.participants from anon, authenticated;
+grant select (id, game_id, name, waiting, joined_at) on public.participants to anon, authenticated;
 
 -- Host can remove participants from their own games (roster management).
 create policy "Host can remove participants from own games"

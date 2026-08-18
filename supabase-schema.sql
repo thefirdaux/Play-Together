@@ -118,19 +118,24 @@ create policy "Hosts manage own games"
 on public.games for all
 using (auth.uid() = host_id) with check (auth.uid() = host_id);
 
--- Anyone (anon or logged in) can read a single game by id — powers the
--- public game-title.html join page and game-details.html's share flow.
--- The uuid itself is the access control (nobody can enumerate ids).
-create policy "Anyone can view a game by id"
-on public.games for select
-using (true);
+-- NOTE: no blanket "select using (true)" policy on games — that would
+-- let anyone list every host's games (not just the one they have the
+-- id/link for), which a client-side .eq('id', ...) filter does NOT
+-- protect against once RLS itself grants row-level access. The public,
+-- read-one-game-by-id need (game-title.html, no login) goes through the
+-- get_public_game() RPC below instead, which only ever returns the one
+-- row asked for.
 
 -- Anyone can read participants of a game (needed to render the roster
 -- on both the public join page and the host's admin view, and because
--- Realtime still evaluates SELECT RLS per change event).
+-- Realtime still evaluates SELECT RLS per change event). Column-level
+-- access to `phone` is revoked further below so this can stay broad
+-- without exposing everyone's phone numbers to a plain table scan.
 create policy "Anyone can view participants"
 on public.participants for select
 using (true);
+
+revoke select (phone) on public.participants from anon, authenticated;
 
 -- Host can remove participants from their own games (roster management).
 create policy "Host can remove participants from own games"
@@ -144,8 +149,20 @@ using (exists (select 1 from public.games g where g.id = participants.game_id an
 -- a plain RLS predicate can't safely express.
 
 -- ============================================================
--- RPC functions (join / leave)
+-- RPC functions
 -- ============================================================
+
+-- Public-safe way to fetch exactly one game by its unguessable id (used
+-- by game-title.html, which has no login). security definer so it can
+-- read the row despite there being no public "select using (true))"
+-- policy on games — see the note above "Hosts manage own games".
+create or replace function public.get_public_game(p_game_id uuid)
+returns public.games
+language sql security definer set search_path = public
+as $$
+  select * from public.games where id = p_game_id;
+$$;
+grant execute on function public.get_public_game(uuid) to anon, authenticated;
 
 -- Validates the game's optional group whitelist, computes `waiting`
 -- atomically (so two simultaneous joins can't both slip into the last
@@ -206,6 +223,39 @@ begin
 end;
 $$;
 grant execute on function public.leave_game(uuid, text) to anon, authenticated;
+
+-- Whenever a *confirmed* (non-waiting) participant row is deleted — via
+-- leave_game() above, or a host removing someone directly from
+-- game-details.html — automatically promote the longest-waiting person
+-- on that game's waiting list into the now-open spot. security definer
+-- so it can update the row even though there's no general UPDATE policy
+-- on participants (deliberately, same reasoning as the join/leave RPCs).
+create or replace function public.promote_next_waiting()
+returns trigger
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_next_id uuid;
+begin
+  if OLD.waiting = false then
+    select id into v_next_id
+    from public.participants
+    where game_id = OLD.game_id and waiting = true
+    order by joined_at asc
+    limit 1;
+
+    if v_next_id is not null then
+      update public.participants set waiting = false where id = v_next_id;
+    end if;
+  end if;
+  return OLD;
+end;
+$$;
+
+drop trigger if exists participants_promote_waiting on public.participants;
+create trigger participants_promote_waiting
+after delete on public.participants
+for each row execute function public.promote_next_waiting();
 
 -- ============================================================
 -- Realtime

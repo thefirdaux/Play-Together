@@ -405,9 +405,11 @@
   })();
 
   async function loadGames(){
+    var userResult = await supabase.auth.getUser();
     var result = await supabase
       .from('games')
       .select('id, title, game_date, time_start, time_end, venue')
+      .eq('host_id', userResult.data.user.id)
       .order('created_at', { ascending: false });
 
     if (result.error){

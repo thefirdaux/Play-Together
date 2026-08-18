@@ -901,8 +901,11 @@
     }
 
     // Public read — anyone with the link can view a game, no login
-    // required. RLS on the games table allows this for any id.
-    var gameResult = await supabase.from('games').select('*').eq('id', gameId).single();
+    // required. Goes through the get_public_game() RPC (not a direct
+    // table select) so a stranger can fetch the ONE game they have the
+    // unguessable id for, without RLS having to grant blanket
+    // list-every-game access to make that possible.
+    var gameResult = await supabase.rpc('get_public_game', { p_game_id: gameId });
     if (gameResult.error || !gameResult.data){
       loadingNoteEl.textContent = 'Game not found, or this link has expired.';
       return;

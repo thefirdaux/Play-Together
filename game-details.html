@@ -373,6 +373,16 @@
     margin: 0;
   }
 
+  .waiting-row{
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--fs-small);
+    color: var(--color-ink);
+  }
+
+  .waiting-row:not(:last-child){
+    border-bottom: 1px solid var(--color-border);
+  }
+
   /* ---------- CTA ---------- */
   .cta-wrap{
     position: fixed;
@@ -662,7 +672,7 @@
 </head>
 <body>
 
-<div class="frame">
+<div class="frame" id="frame" style="display:none;">
 
   <!-- Header -->
   <header class="header">
@@ -775,8 +785,8 @@
 
   <!-- Waiting list -->
   <section class="section">
-    <h2 class="section-label">Waiting list (0)</h2>
-    <div class="card">
+    <h2 class="section-label" id="waiting-header">Waiting list (0)</h2>
+    <div class="card" id="waiting-list">
       <p class="waiting-hint">If someone who is already in leaves, then the next person in the waitlist joins automatically.</p>
     </div>
   </section>
@@ -784,11 +794,13 @@
 </div>
 
 <!-- CTA -->
-<div class="cta-wrap">
+<div class="cta-wrap" id="cta-wrap" style="display:none;">
   <div class="cta-inner">
     <button class="cta-button" id="share-game-btn">Share game</button>
   </div>
 </div>
+
+<p id="loading-note" style="text-align:center; padding: 40px 20px; color: var(--color-ink-soft); font-size: 13px; font-family: var(--font-body);">Loading…</p>
 
 <!-- Navigate options bottom sheet -->
 <div class="nav-sheet-overlay" id="nav-sheet-overlay" aria-hidden="true">
@@ -828,46 +840,89 @@
   </div>
 </div>
 
-<script>
-  // ---------- Populate from Create list page ----------
-  // Data is handed off via a URL query param since these are static
-  // prototype pages with no backend/router (see index.html's
-  // create-game-btn handler).
-  (function(){
-    var raw = new URLSearchParams(window.location.search).get('data');
-    if (!raw) return;
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-    var data;
-    try {
-      data = JSON.parse(raw);
-    } catch (e) {
+  // TODO: replace with your project's values — Supabase dashboard →
+  // Project Settings → API.
+  const SUPABASE_URL = 'https://egippcpanjtvpfkxefhy.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_cRGn5ZoheUHN3ZpqJ1e6dg_frds_duF';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var gameId = new URLSearchParams(window.location.search).get('id');
+
+  var frameEl = document.getElementById('frame');
+  var ctaWrapEl = document.getElementById('cta-wrap');
+  var loadingNoteEl = document.getElementById('loading-note');
+
+  var currentGame = null;
+
+  function escapeHtml(str){
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function joinWithAnd(list){
+    if (list.length === 0) return '';
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return list[0] + ' & ' + list[1];
+    return list.slice(0, -1).join(', ') + ' & ' + list[list.length - 1];
+  }
+
+  // Turns *word* into <strong>word</strong>. Run this AFTER escaping HTML
+  // entities so the asterisks can only ever produce a <strong> tag, never
+  // arbitrary markup from user input.
+  function applyBoldMarkup(escapedText){
+    return escapedText.replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+  }
+
+  (async function init(){
+    if (!gameId){
+      loadingNoteEl.textContent = 'No game specified.';
       return;
     }
 
-    function joinWithAnd(list){
-      if (list.length === 0) return '';
-      if (list.length === 1) return list[0];
-      if (list.length === 2) return list[0] + ' & ' + list[1];
-      return list.slice(0, -1).join(', ') + ' & ' + list[list.length - 1];
+    var sessionResult = await supabase.auth.getSession();
+    if (!sessionResult.data.session){
+      window.location.href = 'login.html';
+      return;
     }
 
-    // Turns *word* into <strong>word</strong>. Run this AFTER escaping HTML
-    // entities so the asterisks can only ever produce a <strong> tag, never
-    // arbitrary markup from user input.
-    function applyBoldMarkup(escapedText){
-      return escapedText.replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+    var gameResult = await supabase.from('games').select('*').eq('id', gameId).single();
+    if (gameResult.error || !gameResult.data){
+      loadingNoteEl.textContent = 'Game not found.';
+      return;
     }
 
+    if (gameResult.data.host_id !== sessionResult.data.session.user.id){
+      loadingNoteEl.textContent = "This isn't your game.";
+      return;
+    }
+
+    currentGame = gameResult.data;
+    renderGame(currentGame);
+
+    frameEl.style.display = '';
+    ctaWrapEl.style.display = '';
+    loadingNoteEl.style.display = 'none';
+
+    await refreshParticipants();
+    subscribeRealtime();
+    setupNavigateSheet();
+    setupShareSheet();
+  })();
+
+  function renderGame(game){
     // Title
-    if (data.title){
-      document.querySelector('.game-title').textContent = data.title;
+    if (game.title){
+      document.querySelector('.game-title').textContent = game.title;
     }
 
     // Type of game tags
     var tagRow = document.querySelector('.tag-row');
-    if (data.types && data.types.length){
+    if (game.types && game.types.length){
       tagRow.innerHTML = '';
-      data.types.forEach(function(type){
+      game.types.forEach(function(type){
         var pill = document.createElement('span');
         pill.className = 'tag-pill';
         pill.textContent = type;
@@ -878,26 +933,25 @@
     // Date / Time
     var datetimeEl = document.getElementById('info-datetime');
     var datetimeParts = [];
-    if (data.date) datetimeParts.push(data.date);
-    if (data.timeStart && data.timeEnd){
-      datetimeParts.push(data.timeStart + ' - ' + data.timeEnd);
-    } else if (data.timeStart || data.timeEnd){
-      datetimeParts.push(data.timeStart || data.timeEnd);
+    if (game.game_date) datetimeParts.push(game.game_date);
+    if (game.time_start && game.time_end){
+      datetimeParts.push(game.time_start + ' - ' + game.time_end);
+    } else if (game.time_start || game.time_end){
+      datetimeParts.push(game.time_start || game.time_end);
     }
     datetimeEl.textContent = datetimeParts.length ? datetimeParts.join(', ') : 'Date and time not set';
 
     // Venue
-    var venueEl = document.getElementById('info-venue');
-    venueEl.textContent = data.venue || 'Venue not set';
+    document.getElementById('info-venue').textContent = game.venue || 'Venue not set';
 
     // Court
     var courtCountEl = document.getElementById('info-court-count');
     var courtNumbersEl = document.getElementById('info-court-numbers');
-    var courtCount = data.courtCount || 0;
+    var courtCount = game.court_count || 0;
     if (courtCount > 0){
       courtCountEl.textContent = courtCount + ' court booked';
-      var numbers = (data.courtNumbers && data.courtNumbers.length)
-        ? data.courtNumbers
+      var numbers = (game.court_numbers && game.court_numbers.length)
+        ? game.court_numbers
         : Array.from({ length: courtCount }, function(_, i){ return String(i + 1); });
       courtNumbersEl.textContent = 'Court ' + joinWithAnd(numbers);
     } else {
@@ -906,49 +960,92 @@
     }
 
     // Shuttle
-    var shuttleEl = document.getElementById('info-shuttle');
-    shuttleEl.textContent = data.shuttle || 'No shuttle info provided';
+    document.getElementById('info-shuttle').textContent = game.shuttle || 'No shuttle info provided';
 
     // Price
-    var priceEl = document.getElementById('info-price');
-    priceEl.textContent = data.priceSummary || 'Free';
+    document.getElementById('info-price').textContent = game.price_summary || 'Free';
 
     // Description / rules
     var descriptionEl = document.getElementById('info-description');
-    if (data.description){
+    if (game.description){
       descriptionEl.innerHTML = '';
-      data.description.split(/\n\s*\n/).forEach(function(paragraph){
+      game.description.split(/\n\s*\n/).forEach(function(paragraph){
         var p = document.createElement('p');
         p.innerHTML = paragraph.split('\n').map(function(line){
-          var escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          return applyBoldMarkup(escaped);
+          return applyBoldMarkup(escapeHtml(line));
         }).join('<br>');
         descriptionEl.appendChild(p);
       });
     } else {
       descriptionEl.innerHTML = '<p>No description provided.</p>';
     }
+  }
 
-    // Joined (starts empty — nobody has joined yet)
-    var total = data.participantsTotal || 16;
-    document.getElementById('joined-header').textContent = 'Joined ( 0/' + total + ')';
+  // ---------- Joined / Waiting list (live via Realtime) ----------
+  async function refreshParticipants(){
+    var result = await supabase
+      .from('participants')
+      .select('id, name, waiting')
+      .eq('game_id', gameId)
+      .order('joined_at', { ascending: true });
+
+    var rows = result.data || [];
+    var joined = rows.filter(function(r){ return !r.waiting; });
+    var waiting = rows.filter(function(r){ return r.waiting; });
+    var total = currentGame.participants_total || 16;
+
+    document.getElementById('joined-header').textContent = 'Joined ( ' + joined.length + '/' + total + ')';
+
     var grid = document.getElementById('avatar-grid');
     grid.innerHTML = '';
-    for (var i = 0; i < total; i++){
+    joined.forEach(function(p){
       var slot = document.createElement('div');
       slot.className = 'avatar-slot';
       var circle = document.createElement('div');
-      circle.className = 'avatar-circle is-empty';
+      circle.className = 'avatar-circle';
+      circle.textContent = (p.name || '?').charAt(0).toUpperCase();
+      var nameEl = document.createElement('div');
+      nameEl.className = 'avatar-name';
+      nameEl.textContent = p.name;
       slot.appendChild(circle);
+      slot.appendChild(nameEl);
       grid.appendChild(slot);
+    });
+    var emptySlots = Math.max(0, total - joined.length);
+    for (var i = 0; i < emptySlots; i++){
+      var emptySlot = document.createElement('div');
+      emptySlot.className = 'avatar-slot';
+      var emptyCircle = document.createElement('div');
+      emptyCircle.className = 'avatar-circle is-empty';
+      emptySlot.appendChild(emptyCircle);
+      grid.appendChild(emptySlot);
     }
-  })();
+
+    document.getElementById('waiting-header').textContent = 'Waiting list (' + waiting.length + ')';
+    var waitingListEl = document.getElementById('waiting-list');
+    if (waiting.length === 0){
+      waitingListEl.innerHTML = '<p class="waiting-hint">If someone who is already in leaves, then the next person in the waitlist joins automatically.</p>';
+    } else {
+      waitingListEl.innerHTML = waiting.map(function(p, i){
+        return '<div class="waiting-row">' + (i + 1) + '. ' + escapeHtml(p.name) + '</div>';
+      }).join('');
+    }
+  }
+
+  function subscribeRealtime(){
+    supabase
+      .channel('participants-' + gameId)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'participants', filter: 'game_id=eq.' + gameId },
+        function(){ refreshParticipants(); }
+      )
+      .subscribe();
+  }
 
   // ---------- Navigate options bottom sheet ----------
   // The Navigate icon on the Venue row opens a sheet letting the user pick
-  // Google Maps or Waze, using whichever links were pasted on the Create
-  // list page (handed off via the same "data" query param).
-  (function(){
+  // Google Maps or Waze, using whichever links were saved on the game.
+  function setupNavigateSheet(){
     var trigger = document.getElementById('navigate-trigger');
     var overlay = document.getElementById('nav-sheet-overlay');
     var backdrop = document.getElementById('nav-sheet-backdrop');
@@ -958,14 +1055,8 @@
 
     if (!trigger || !overlay) return;
 
-    var raw = new URLSearchParams(window.location.search).get('data');
-    var data = {};
-    if (raw){
-      try { data = JSON.parse(raw); } catch (e) { data = {}; }
-    }
-
-    var mapsLink = (data.mapsLink || '').trim();
-    var wazeLink = (data.wazeLink || '').trim();
+    var mapsLink = (currentGame.maps_link || '').trim();
+    var wazeLink = (currentGame.waze_link || '').trim();
 
     gmapsBtn.disabled = !mapsLink;
     wazeBtn.disabled = !wazeLink;
@@ -1010,7 +1101,7 @@
       window.open(wazeLink, '_blank', 'noopener');
       closeSheet();
     });
-  })();
+  }
 
   // ---------- Share game ----------
   // Clicking "Share game" opens a bottom sheet showing the game-title.html
@@ -1019,25 +1110,10 @@
   // share sheet when available. This page itself is the creator's own
   // view and shouldn't be what invited players land on.
   //
-  // SHORT LINK: this is a static site (GitHub Pages, no backend/database),
-  // so a URL that contains no game data at all — just "?w=<title-slug>&
-  // d=<date-slug>" — only works if the full record is stored somewhere
-  // else that any device can read at runtime. We PUT the full game data to
-  // kvdb.io (a free, anonymous, CORS-enabled key-value store — no login,
-  // no server of our own to run) keyed by "<w>_<d>", and game-title.html
-  // GETs it back by rebuilding that same key from its own w/d params.
-  // Free-tier caveats (disclosed to the user): keys expire after ~3
-  // months of inactivity, and the bucket ID below is effectively public
-  // (visible in this page's source) — fine for a low-stakes prototype,
-  // not for sensitive data.
-  //
-  // FALLBACK: if the kvdb.io write fails (offline, rate-limited, service
-  // down) we fall back to the older, fully self-contained long link
-  // (object keys minified — title -> t, venue -> v, etc. — and the JSON
-  // base64url-encoded into "g="), so sharing never just breaks. That
-  // long-link format is also what game-title.html still accepts for any
-  // previously-generated links (see readGameDataFromUrl there).
-  (function(){
+  // The game now lives in Supabase, so the share link is just the game's
+  // id — game-title.html fetches the full record by id itself, same as
+  // this page does. No more kvdb.io / base64 encoding needed.
+  function setupShareSheet(){
     var btn = document.getElementById('share-game-btn');
     var overlay = document.getElementById('share-sheet-overlay');
     var backdrop = document.getElementById('share-sheet-backdrop');
@@ -1048,122 +1124,27 @@
 
     if (!btn || !overlay) return;
 
-    var KVDB_BUCKET = 'RWBfo6rsydaPgXsuNFmkx3';
-    var KVDB_BASE = 'https://kvdb.io/' + KVDB_BUCKET + '/';
-
-    var SHORT_KEYS = {
-      title: 't', date: 'd', timeStart: 'ts', timeEnd: 'te', venue: 'v',
-      mapsLink: 'ml', wazeLink: 'wl', courtCount: 'cc', courtNumbers: 'cn',
-      shuttle: 'sh', priceSummary: 'p', description: 'de',
-      participantsTotal: 'pt', types: 'ty'
-    };
-
-    function toBase64Url(str){
-      var b64 = btoa(unescape(encodeURIComponent(str)));
-      return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
-
-    function encodeGameData(data){
-      var compact = {};
-      Object.keys(SHORT_KEYS).forEach(function(key){
-        var val = data[key];
-        if (val === undefined || val === null || val === '') return;
-        if (Array.isArray(val) && val.length === 0) return;
-        compact[SHORT_KEYS[key]] = val;
-      });
-      return toBase64Url(JSON.stringify(compact));
-    }
-
-    function slugify(text, maxLen){
-      var slug = (text || '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      return maxLen ? slug.slice(0, maxLen) : slug;
-    }
-
-    function getGameData(){
-      var raw = new URLSearchParams(window.location.search).get('data');
-      var data = {};
-      if (raw){
-        try { data = JSON.parse(raw); } catch (e) { data = {}; }
-      }
-      return data;
-    }
-
-    // Title is length-capped and the weekday is dropped from the date
-    // (e.g. "Fri, 21 Aug 2026" -> "21 Aug 2026") so the slug stays short
-    // and always ends cleanly at the date, instead of trailing off with
-    // redundant text.
-    function getSlugParts(data){
-      var titleEl = document.querySelector('.game-title');
-      var title = titleEl ? titleEl.textContent : (data.title || '');
-      var dateOnly = (data.date || '').replace(/^[A-Za-z]+,\s*/, '');
-      return {
-        w: slugify(title, 30) || 'game',
-        d: slugify(dateOnly)
-      };
-    }
-
-    function getLongShareUrl(data){
-      var parts = getSlugParts(data);
-      var slug = [parts.w, parts.d].filter(Boolean).join('-') || 'game';
-
+    function getShareUrl(){
       var joinUrl = new URL('game-title.html', window.location.href);
-      joinUrl.searchParams.set('n', slug);
-      joinUrl.searchParams.set('g', encodeGameData(data));
+      joinUrl.searchParams.set('id', gameId);
       return joinUrl.toString();
     }
 
-    // Resolves to the short "?w=&d=" URL if the kvdb.io write succeeds,
-    // otherwise falls back to the long self-contained URL.
-    function getShortShareUrl(data){
-      var parts = getSlugParts(data);
-      var key = parts.w + '_' + parts.d;
-
-      return fetch(KVDB_BASE + encodeURIComponent(key), {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      }).then(function(res){
-        if (!res.ok) throw new Error('kvdb.io write failed: ' + res.status);
-        var joinUrl = new URL('game-title.html', window.location.href);
-        joinUrl.searchParams.set('w', parts.w);
-        joinUrl.searchParams.set('d', parts.d);
-        return joinUrl.toString();
-      }).catch(function(err){
-        console.warn('Short link storage failed, falling back to long link.', err);
-        return getLongShareUrl(data);
-      });
-    }
-
     function getShareData(url){
-      var titleEl = document.querySelector('.game-title');
       return {
-        title: titleEl ? titleEl.textContent : 'Play Together',
+        title: currentGame.title || 'Play Together',
         text: 'Join this game on Play Together!',
         url: url
       };
     }
 
-    var currentShareUrl = '';
-
-    function setBusy(busy){
-      copyBtn.disabled = busy;
-      nativeBtn.disabled = busy;
-    }
+    var currentShareUrl = getShareUrl();
 
     function openSheet(){
-      linkTextEl.textContent = 'Generating link…';
+      linkTextEl.textContent = currentShareUrl;
       overlay.classList.add('open');
       overlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
-      setBusy(true);
-
-      getShortShareUrl(getGameData()).then(function(url){
-        currentShareUrl = url;
-        linkTextEl.textContent = url;
-        setBusy(false);
-      });
     }
 
     function closeSheet(){
@@ -1200,7 +1181,7 @@
     } else {
       nativeBtn.style.display = 'none';
     }
-  })();
+  }
 </script>
 
 </body>

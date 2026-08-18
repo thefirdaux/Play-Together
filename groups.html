@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Play Together — Manage Group</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-bg: #E7E7E7;
+    --color-surface: #FFFFFF;
+    --color-ink: #171717;
+    --color-ink-soft: #6B6B6B;
+    --color-placeholder: #A3A3A3;
+    --color-border: #E5E5E5;
+    --color-primary: #153320;
+    --color-accent: #D6E84B;
+    --color-accent-soft: #C9D8B8;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
+
+    --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+
+    --fs-h1: 30px;
+    --fs-h2: 15px;
+    --fs-body: 15px;
+    --fs-small: 13px;
+    --fs-caption: 12px;
+
+    --frame-min: 393px;
+    --frame-max: 700px;
+
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+    font-family: var(--font-body);
+    color: var(--color-ink);
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+    touch-action: pan-y;
+  }
+
+  body{
+    display: flex;
+    justify-content: center;
+    min-width: var(--frame-min);
+  }
+
+  .frame{
+    width: 100%;
+    min-width: var(--frame-min);
+    max-width: var(--frame-max);
+    background: var(--color-bg);
+    position: relative;
+    min-height: 100vh;
+    padding-bottom: var(--space-8);
+  }
+
+  .header{
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-8) var(--space-5) var(--space-2);
+  }
+
+  .logo-badge{
+    width: 40px;
+    height: 40px;
+    border-radius: 6.4px;
+    background: #E4FF3A;
+    border: 0.4px solid #000000;
+    color: #143622;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', var(--font-display);
+    font-weight: 700;
+    font-size: 25.6px;
+    line-height: normal;
+    flex-shrink: 0;
+  }
+
+  .brand-name{
+    font-weight: 800;
+    font-size: 18px;
+    text-align: left;
+    font-family: var(--font-display);
+    flex: 1;
+  }
+
+  .back-link{
+    padding: 0 var(--space-5);
+  }
+
+  .back-link a{
+    font-size: var(--fs-small);
+    color: var(--color-ink-soft);
+    text-decoration: none;
+  }
+
+  .hero{
+    padding: var(--space-4) var(--space-5) 0;
+  }
+
+  .hero h1{
+    font-family: var(--font-sf);
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 34px;
+    letter-spacing: 0.38px;
+    margin: 0;
+    word-break: break-word;
+  }
+
+  .hero p{
+    margin: var(--space-3) 0 0;
+    font-size: var(--fs-small);
+    line-height: 1.55;
+    color: var(--color-ink-soft);
+  }
+
+  .section{
+    padding: var(--space-7) var(--space-5) 0;
+  }
+
+  .section-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 var(--space-3);
+  }
+
+  .section-label{
+    font-size: var(--fs-h2);
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .add-btn{
+    border: none;
+    background: none;
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    font-size: var(--fs-small);
+    font-weight: 700;
+    cursor: pointer;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .card{
+    background: var(--color-surface);
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+    padding: 0;
+  }
+
+  .row-group > *:not(:last-child){
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .row-group > *:first-child{
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+
+  .row-group > *:last-child{
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  .member-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+
+  .member-info{ min-width: 0; }
+
+  .member-phone{
+    font-size: var(--fs-body);
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+
+  .member-name{
+    font-size: var(--fs-small);
+    color: var(--color-ink-soft);
+    margin-top: 2px;
+  }
+
+  .remove-btn{
+    border: none;
+    background: none;
+    color: #C0392B;
+    font-family: var(--font-body);
+    font-size: var(--fs-small);
+    font-weight: 700;
+    cursor: pointer;
+    padding: var(--space-2);
+    flex-shrink: 0;
+  }
+
+  .empty-state{
+    padding: var(--space-6) var(--space-5);
+    text-align: center;
+    font-size: var(--fs-small);
+    color: var(--color-ink-soft);
+  }
+
+  .inline-form{
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .field{
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    outline: none;
+    font-family: var(--font-body);
+    font-size: max(16px, var(--fs-body));
+    color: var(--color-ink);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .field::placeholder{ color: var(--color-placeholder); }
+
+  .primary-btn{
+    width: 100%;
+    padding: var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary);
+    color: var(--color-accent);
+    font-family: var(--font-display);
+    font-size: var(--fs-small);
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .primary-btn:active{ opacity: 0.9; }
+  .primary-btn:disabled{ opacity: 0.6; cursor: default; }
+
+  .form-error{
+    padding: 0 var(--space-1);
+    font-size: var(--fs-caption);
+    color: #C0392B;
+    display: none;
+  }
+  .form-error.visible{ display: block; }
+
+  .status-note{
+    padding: var(--space-6) var(--space-5);
+    text-align: center;
+    font-size: var(--fs-small);
+    color: var(--color-ink-soft);
+  }
+
+  button, .field{ min-height: 44px; }
+</style>
+</head>
+<body>
+
+<div class="frame" id="frame" style="display:none;">
+
+  <header class="header">
+    <div class="logo-badge">Pt</div>
+    <span class="brand-name">Play Together</span>
+  </header>
+
+  <div class="back-link"><a href="dashboard.html">&larr; Back to dashboard</a></div>
+
+  <section class="hero">
+    <h1 id="group-name-heading">Group</h1>
+    <p>Only phone numbers on this list can join a game you attach this group to.</p>
+  </section>
+
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-label">Whitelist</h2>
+    </div>
+    <div class="card">
+      <div class="inline-form">
+        <input class="field" type="text" id="member-name-input" placeholder="Name (optional)" />
+        <input class="field" type="tel" id="member-phone-input" placeholder="Phone number" />
+        <p class="form-error" id="member-form-error"></p>
+        <button class="primary-btn" id="add-member-btn" type="button">Add to whitelist</button>
+      </div>
+      <div class="row-group" id="members-list"></div>
+    </div>
+  </section>
+
+</div>
+
+<p class="status-note" id="loading-note">Loading…</p>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  // TODO: replace with your project's values — Supabase dashboard →
+  // Project Settings → API.
+  const SUPABASE_URL = 'https://egippcpanjtvpfkxefhy.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_cRGn5ZoheUHN3ZpqJ1e6dg_frds_duF';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var groupId = new URLSearchParams(window.location.search).get('id');
+
+  var frameEl = document.getElementById('frame');
+  var loadingNoteEl = document.getElementById('loading-note');
+  var headingEl = document.getElementById('group-name-heading');
+  var membersListEl = document.getElementById('members-list');
+  var nameInput = document.getElementById('member-name-input');
+  var phoneInput = document.getElementById('member-phone-input');
+  var addMemberBtn = document.getElementById('add-member-btn');
+  var memberFormErrorEl = document.getElementById('member-form-error');
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  (async function init(){
+    if (!groupId){
+      loadingNoteEl.textContent = 'No group specified.';
+      return;
+    }
+
+    var sessionResult = await supabase.auth.getSession();
+    if (!sessionResult.data.session){
+      window.location.href = 'login.html';
+      return;
+    }
+
+    var groupResult = await supabase
+      .from('groups')
+      .select('id, name, host_id')
+      .eq('id', groupId)
+      .single();
+
+    // RLS already restricts groups to their owning host, so a group
+    // belonging to someone else (or a bad id) simply won't be found here.
+    if (groupResult.error || !groupResult.data){
+      loadingNoteEl.textContent = 'Group not found, or this isn\'t your group.';
+      return;
+    }
+
+    frameEl.style.display = '';
+    loadingNoteEl.style.display = 'none';
+    headingEl.textContent = groupResult.data.name;
+
+    await loadMembers();
+  })();
+
+  async function loadMembers(){
+    var result = await supabase
+      .from('group_members')
+      .select('id, name, phone')
+      .eq('group_id', groupId)
+      .order('added_at', { ascending: false });
+
+    if (result.error){
+      membersListEl.innerHTML = '<p class="empty-state">Couldn\'t load the whitelist: ' + escapeHtml(result.error.message) + '</p>';
+      return;
+    }
+
+    var members = result.data || [];
+    if (members.length === 0){
+      membersListEl.innerHTML = '<p class="empty-state">No numbers yet — add your first one above.</p>';
+      return;
+    }
+
+    membersListEl.innerHTML = members.map(function(member){
+      return '<div class="member-row" data-member-id="' + escapeHtml(member.id) + '">' +
+        '<div class="member-info">' +
+          '<div class="member-phone">' + escapeHtml(member.phone) + '</div>' +
+          (member.name ? '<div class="member-name">' + escapeHtml(member.name) + '</div>' : '') +
+        '</div>' +
+        '<button class="remove-btn" type="button" data-remove-id="' + escapeHtml(member.id) + '">Remove</button>' +
+      '</div>';
+    }).join('');
+
+    membersListEl.querySelectorAll('[data-remove-id]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        removeMember(btn.getAttribute('data-remove-id'));
+      });
+    });
+  }
+
+  async function removeMember(memberId){
+    if (!window.confirm('Remove this number from the whitelist?')) return;
+
+    var result = await supabase.from('group_members').delete().eq('id', memberId);
+    if (result.error){
+      window.alert('Could not remove: ' + result.error.message);
+      return;
+    }
+    await loadMembers();
+  }
+
+  addMemberBtn.addEventListener('click', async function(){
+    var name = nameInput.value.trim();
+    var phone = phoneInput.value.trim();
+    memberFormErrorEl.classList.remove('visible');
+
+    if (!phone){
+      memberFormErrorEl.textContent = 'Please enter a phone number.';
+      memberFormErrorEl.classList.add('visible');
+      return;
+    }
+
+    addMemberBtn.disabled = true;
+    var result = await supabase.from('group_members').insert({
+      group_id: groupId,
+      phone: phone,
+      name: name || null
+    });
+    addMemberBtn.disabled = false;
+
+    if (result.error){
+      // Most likely a duplicate phone number (unique constraint on
+      // group_id + phone).
+      memberFormErrorEl.textContent = result.error.message.indexOf('duplicate') !== -1
+        ? 'This phone number is already on the whitelist.'
+        : result.error.message;
+      memberFormErrorEl.classList.add('visible');
+      return;
+    }
+
+    nameInput.value = '';
+    phoneInput.value = '';
+    await loadMembers();
+  });
+</script>
+
+</body>
+</html>

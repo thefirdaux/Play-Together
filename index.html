@@ -709,6 +709,38 @@
     cursor: pointer;
   }
 
+  .group-chip{
+    width: auto;
+    min-width: 120px;
+    max-width: 200px;
+    position: relative;
+  }
+
+  .group-chip .chip-icon{
+    margin-left: auto;
+    pointer-events: none;
+  }
+
+  .group-select{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--color-ink);
+    padding: 0 24px 0 10px;
+    outline: none;
+    cursor: pointer;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
   /* ---------- Row (settings-style) ---------- */
   .row{
     display: flex;
@@ -1188,7 +1220,7 @@
 </head>
 <body>
 
-<div class="frame">
+<div class="frame" id="frame" style="display:none;">
 
   <!-- Header -->
   <header class="header">
@@ -1513,6 +1545,15 @@
   <section class="section">
     <h2 class="section-label">Settings</h2>
     <div class="card row-group">
+      <div class="row">
+        <span class="row-label">Group</span>
+        <div class="chip group-chip">
+          <select class="group-select" id="group-select" aria-label="Group">
+            <option value="">Open to everyone</option>
+          </select>
+          <svg class="chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
       <button class="row" id="price-row" type="button" aria-haspopup="dialog" aria-expanded="false">
         <div class="row-text">
           <span class="row-label">Price</span>
@@ -1530,11 +1571,13 @@
 </div>
 
 <!-- CTA -->
-<div class="cta-wrap">
+<div class="cta-wrap" id="cta-wrap" style="display:none;">
   <div class="cta-inner">
     <button class="cta-button" id="create-game-btn">Create game list</button>
   </div>
 </div>
+
+<p id="loading-note" style="text-align:center; padding: 40px 20px; color: var(--color-ink-soft); font-size: 13px; font-family: var(--font-body);">Loading…</p>
 
 <script>
   // ---------- Shared dropdown registry ----------
@@ -2562,9 +2605,10 @@
   })();
 
   // ---------- CTA ----------
-  // Gathers the fields the Game Details page needs and hands them off via a
-  // URL query param — these are static prototype pages with no backend/
-  // database, so the query string is the hand-off mechanism instead.
+  // Gathers the fields the Game Details page needs and inserts them into
+  // Supabase's `games` table (see the "Supabase" module script below,
+  // which exposes window.__ptSupabase for this handler to use), then
+  // redirects to the new row's admin page by id.
   document.getElementById('create-game-btn').addEventListener('click', function(){
     var titleEl = document.getElementById('title-input');
     var dateEl = document.getElementById('date-trigger-value');
@@ -2581,6 +2625,9 @@
     var courtNumberSummaryEl = document.getElementById('court-number-summary');
     var priceSummaryEl = document.getElementById('price-summary');
     var typeGridEl = document.getElementById('type-grid');
+    var groupSelectEl = document.getElementById('group-select');
+    var privateToggleEl = document.getElementById('toggle-private');
+    var createBtn = document.getElementById('create-game-btn');
 
     if (!titleEl.value.trim()){
       titleEl.classList.add('is-invalid');
@@ -2616,11 +2663,100 @@
       priceSummary: priceSummaryEl.textContent.trim(),
       description: descriptionEl.value.trim(),
       participantsTotal: participantsTotal,
-      types: types
+      types: types,
+      groupId: groupSelectEl.value || null,
+      isPrivate: privateToggleEl.getAttribute('aria-pressed') === 'true'
     };
 
-    window.location.href = 'game-details.html?data=' + encodeURIComponent(JSON.stringify(data));
+    if (!window.__ptCreateGame){
+      window.alert('Still loading — please try again in a moment.');
+      return;
+    }
+
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating…';
+
+    window.__ptCreateGame(data).then(function(result){
+      if (result.error){
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create game list';
+        window.alert('Could not create the game: ' + result.error.message);
+        return;
+      }
+      window.location.href = 'game-details.html?id=' + encodeURIComponent(result.data.id);
+    });
   });
+</script>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  // TODO: replace with your project's values — Supabase dashboard →
+  // Project Settings → API.
+  const SUPABASE_URL = 'https://egippcpanjtvpfkxefhy.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_cRGn5ZoheUHN3ZpqJ1e6dg_frds_duF';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var frameEl = document.getElementById('frame');
+  var ctaWrapEl = document.getElementById('cta-wrap');
+  var loadingNoteEl = document.getElementById('loading-note');
+  var groupSelectEl = document.getElementById('group-select');
+
+  function escapeHtml(str){
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  (async function init(){
+    var sessionResult = await supabase.auth.getSession();
+    if (!sessionResult.data.session){
+      window.location.href = 'login.html';
+      return;
+    }
+
+    var groupsResult = await supabase
+      .from('groups')
+      .select('id, name')
+      .order('created_at', { ascending: false });
+
+    if (!groupsResult.error && groupsResult.data){
+      groupsResult.data.forEach(function(group){
+        var option = document.createElement('option');
+        option.value = group.id;
+        option.textContent = group.name;
+        groupSelectEl.appendChild(option);
+      });
+    }
+
+    frameEl.style.display = '';
+    ctaWrapEl.style.display = '';
+    loadingNoteEl.style.display = 'none';
+  })();
+
+  // Exposed for the classic <script> block's CTA click handler above
+  // (module scripts run in their own scope, so this is the hand-off).
+  window.__ptCreateGame = async function(data){
+    var userResult = await supabase.auth.getUser();
+    return supabase.from('games').insert({
+      host_id: userResult.data.user.id,
+      group_id: data.groupId,
+      is_private: data.isPrivate,
+      title: data.title,
+      game_date: data.date,
+      time_start: data.timeStart,
+      time_end: data.timeEnd,
+      venue: data.venue,
+      maps_link: data.mapsLink,
+      waze_link: data.wazeLink,
+      court_count: data.courtCount,
+      court_numbers: data.courtNumbers,
+      shuttle: data.shuttle,
+      price_summary: data.priceSummary,
+      description: data.description,
+      participants_total: data.participantsTotal,
+      types: data.types
+    }).select().single();
+  };
 </script>
 
 </body>

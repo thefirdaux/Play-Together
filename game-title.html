@@ -9,17 +9,17 @@
      IMPORTANT: these tags are intentionally STATIC, not per-game.
      WhatsApp/Facebook/etc. crawlers fetch this file's raw HTML and read
      only what's already in <head> — they do not execute the JavaScript
-     below that fetches the real game data (from kvdb.io, based on the
-     ?w=&d= in the URL) and fills in the page. Since GitHub Pages serves
-     the exact same file bytes for every "?w=...&d=..." query string,
-     there's no way to bake the actual game's title/date/venue into
-     these tags without a server that renders a response per request —
-     which this project intentionally doesn't have. So instead of a
-     generic "Play Together" title with no context, this is a polished,
+     below that fetches the real game data from Supabase (by the ?id= in
+     the URL) and fills in the page. Since GitHub Pages/Netlify serve the
+     exact same file bytes for every "?id=..." query string, there's no
+     way to bake the actual game's title/date/venue into these tags
+     without a server that renders a response per request — which this
+     project intentionally doesn't have. So instead of a generic
+     "Play Together" title with no context, this is a polished,
      honestly-generic "you have a game invite" preview that's correct
      for every shared link, rather than a fake/misleading one showing
      placeholder game details. See the Share code in game-details.html
-     and the comment in this file's <script> for the full picture. -->
+     for the full picture. -->
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Play Together" />
 <meta property="og:title" content="🏸 You're invited to a Play Together game!" />
@@ -391,6 +391,16 @@
     margin: 0;
   }
 
+  .waiting-row{
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--fs-small);
+    color: var(--color-ink);
+  }
+
+  .waiting-row:not(:last-child){
+    border-bottom: 1px solid var(--color-border);
+  }
+
   /* ---------- CTA ---------- */
   .cta-wrap{
     position: fixed;
@@ -635,6 +645,15 @@
     border-color: #C0392B;
   }
 
+  .join-form-error{
+    margin: calc(-1 * var(--space-2)) 0 var(--space-3);
+    font-size: var(--fs-caption);
+    color: #C0392B;
+    display: none;
+  }
+
+  .join-form-error.visible{ display: block; }
+
   .join-sheet-submit{
     width: 100%;
     margin-top: var(--space-2);
@@ -666,7 +685,7 @@
 </head>
 <body>
 
-<div class="frame">
+<div class="frame" id="frame" style="display:none;">
 
   <!-- Header -->
   <header class="header">
@@ -780,7 +799,7 @@
   <!-- Waiting list -->
   <section class="section">
     <h2 class="section-label" id="waiting-header">Waiting list (0)</h2>
-    <div class="card">
+    <div class="card" id="waiting-list">
       <p class="waiting-hint">If someone who is already in leaves, then the next person in the waitlist joins automatically.</p>
     </div>
   </section>
@@ -788,11 +807,13 @@
 </div>
 
 <!-- CTA -->
-<div class="cta-wrap">
+<div class="cta-wrap" id="cta-wrap" style="display:none;">
   <div class="cta-inner">
     <button class="cta-button" id="join-btn">Join</button>
   </div>
 </div>
+
+<p id="loading-note" style="text-align:center; padding: 40px 20px; color: var(--color-ink-soft); font-size: 13px; font-family: var(--font-body);">Loading…</p>
 
 <!-- Navigate options bottom sheet -->
 <div class="nav-sheet-overlay" id="nav-sheet-overlay" aria-hidden="true">
@@ -829,124 +850,88 @@
       <label class="join-field-label" for="join-phone-input">Phone number</label>
       <input class="join-field-input" type="tel" id="join-phone-input" placeholder="e.g. 012-3456789" inputmode="tel" autocomplete="tel" />
     </div>
+    <p class="join-form-error" id="join-form-error"></p>
 
     <button class="join-sheet-submit" id="join-sheet-submit" type="button">Join</button>
     <button class="join-sheet-cancel" id="join-sheet-cancel" type="button">Cancel</button>
   </div>
 </div>
 
-<script>
-  // ---------- Read game data from the URL ----------
-  // Three link formats are supported, checked in this order:
-  //
-  // 1. "?w=<title-slug>&d=<date-slug>" (current format) — the URL itself
-  //    carries no game data, just two short identifiers. The full record
-  //    is fetched from kvdb.io (a free, anonymous, CORS-enabled key-value
-  //    store) at "<bucket>/<w>_<d>", where game-details.html's Share
-  //    button PUT it at share-time. This is what makes a short, clean,
-  //    same-domain link possible on a static host with no backend of our
-  //    own — see the comment above the Share game script in
-  //    game-details.html for the full rationale and free-tier caveats
-  //    (~3 month key expiry, etc).
-  // 2. "?g=<compact base64url JSON>" (previous format) — object keys
-  //    minified (title -> t, venue -> v, etc.), fully self-contained, no
-  //    network call needed. Still supported so older share links keep
-  //    working even after they aged past kvdb.io's retention window, or
-  //    if kvdb.io is ever unreachable.
-  // 3. "?data=<raw JSON>" (original format, still used by index.html's
-  //    own handoff to game-details.html) — kept as a last-resort fallback.
-  //
-  // Resolves to {} (rather than throwing/rejecting) when nothing usable
-  // is found, so the avatar grid below still gets populated with default
-  // empty slots instead of the Join flow silently breaking.
-  var KVDB_BUCKET = 'RWBfo6rsydaPgXsuNFmkx3';
-  var KVDB_BASE = 'https://kvdb.io/' + KVDB_BUCKET + '/';
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-  var SHORT_KEYS_REVERSE = {
-    t: 'title', d: 'date', ts: 'timeStart', te: 'timeEnd', v: 'venue',
-    ml: 'mapsLink', wl: 'wazeLink', cc: 'courtCount', cn: 'courtNumbers',
-    sh: 'shuttle', p: 'priceSummary', de: 'description',
-    pt: 'participantsTotal', ty: 'types'
-  };
+  // TODO: replace with your project's values — Supabase dashboard →
+  // Project Settings → API.
+  const SUPABASE_URL = 'https://egippcpanjtvpfkxefhy.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_cRGn5ZoheUHN3ZpqJ1e6dg_frds_duF';
 
-  function fromBase64Url(str){
-    var b64 = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (b64.length % 4) b64 += '=';
-    return decodeURIComponent(escape(atob(b64)));
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var gameId = new URLSearchParams(window.location.search).get('id');
+
+  var frameEl = document.getElementById('frame');
+  var ctaWrapEl = document.getElementById('cta-wrap');
+  var loadingNoteEl = document.getElementById('loading-note');
+
+  var currentGame = null;
+  var latestParticipants = [];
+
+  function escapeHtml(str){
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function decodeCompactGameData(encoded){
-    var compact = JSON.parse(fromBase64Url(encoded));
-    var data = {};
-    Object.keys(compact).forEach(function(key){
-      data[SHORT_KEYS_REVERSE[key] || key] = compact[key];
-    });
-    return data;
+  function joinWithAnd(list){
+    if (list.length === 0) return '';
+    if (list.length === 1) return list[0];
+    if (list.length === 2) return list[0] + ' & ' + list[1];
+    return list.slice(0, -1).join(', ') + ' & ' + list[list.length - 1];
   }
 
-  function readGameDataFromUrl(){
-    var params = new URLSearchParams(window.location.search);
-
-    var w = params.get('w');
-    var d = params.get('d');
-    if (w && d){
-      var key = w + '_' + d;
-      return fetch(KVDB_BASE + encodeURIComponent(key))
-        .then(function(res){
-          if (!res.ok) throw new Error('kvdb.io lookup failed: ' + res.status);
-          return res.json();
-        })
-        .catch(function(err){
-          console.warn('Short-link game data lookup failed (link may have expired).', err);
-          return {};
-        });
-    }
-
-    var compact = params.get('g');
-    if (compact){
-      try { return Promise.resolve(decodeCompactGameData(compact)); } catch (e) { /* fall through */ }
-    }
-
-    var legacy = params.get('data');
-    if (legacy){
-      try { return Promise.resolve(JSON.parse(legacy)); } catch (e) { /* fall through */ }
-    }
-
-    return Promise.resolve({});
+  // Turns *word* into <strong>word</strong>. Run this AFTER escaping HTML
+  // entities so the asterisks can only ever produce a <strong> tag, never
+  // arbitrary markup from user input.
+  function applyBoldMarkup(escapedText){
+    return escapedText.replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
   }
 
-  // Fetched once and shared by every IIFE below that needs game data, so
-  // a "w"/"d" link only costs a single kvdb.io read regardless of how
-  // many parts of the page use it.
-  var gameDataPromise = readGameDataFromUrl();
-
-  // ---------- Populate from Create list page ----------
-  gameDataPromise.then(function(data){
-
-    function joinWithAnd(list){
-      if (list.length === 0) return '';
-      if (list.length === 1) return list[0];
-      if (list.length === 2) return list[0] + ' & ' + list[1];
-      return list.slice(0, -1).join(', ') + ' & ' + list[list.length - 1];
+  (async function init(){
+    if (!gameId){
+      loadingNoteEl.textContent = 'No game specified.';
+      return;
     }
 
-    // Turns *word* into <strong>word</strong>. Run this AFTER escaping HTML
-    // entities so the asterisks can only ever produce a <strong> tag, never
-    // arbitrary markup from user input.
-    function applyBoldMarkup(escapedText){
-      return escapedText.replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>');
+    // Public read — anyone with the link can view a game, no login
+    // required. RLS on the games table allows this for any id.
+    var gameResult = await supabase.from('games').select('*').eq('id', gameId).single();
+    if (gameResult.error || !gameResult.data){
+      loadingNoteEl.textContent = 'Game not found, or this link has expired.';
+      return;
     }
 
+    currentGame = gameResult.data;
+    renderGame(currentGame);
+
+    frameEl.style.display = '';
+    ctaWrapEl.style.display = '';
+    loadingNoteEl.style.display = 'none';
+
+    await refreshParticipants();
+    subscribeRealtime();
+    setupNavigateSheet();
+    setupJoinSheet();
+  })();
+
+  function renderGame(game){
     // Title
-    if (data.title){
-      document.querySelector('.game-title').textContent = data.title;
+    if (game.title){
+      document.querySelector('.game-title').textContent = game.title;
     }
 
     // Type of game tags
     var tagRow = document.querySelector('.tag-row');
-    if (data.types && data.types.length){
+    if (game.types && game.types.length){
       tagRow.innerHTML = '';
-      data.types.forEach(function(type){
+      game.types.forEach(function(type){
         var pill = document.createElement('span');
         pill.className = 'tag-pill';
         pill.textContent = type;
@@ -957,26 +942,25 @@
     // Date / Time
     var datetimeEl = document.getElementById('info-datetime');
     var datetimeParts = [];
-    if (data.date) datetimeParts.push(data.date);
-    if (data.timeStart && data.timeEnd){
-      datetimeParts.push(data.timeStart + ' - ' + data.timeEnd);
-    } else if (data.timeStart || data.timeEnd){
-      datetimeParts.push(data.timeStart || data.timeEnd);
+    if (game.game_date) datetimeParts.push(game.game_date);
+    if (game.time_start && game.time_end){
+      datetimeParts.push(game.time_start + ' - ' + game.time_end);
+    } else if (game.time_start || game.time_end){
+      datetimeParts.push(game.time_start || game.time_end);
     }
     datetimeEl.textContent = datetimeParts.length ? datetimeParts.join(', ') : 'Date and time not set';
 
     // Venue
-    var venueEl = document.getElementById('info-venue');
-    venueEl.textContent = data.venue || 'Venue not set';
+    document.getElementById('info-venue').textContent = game.venue || 'Venue not set';
 
     // Court
     var courtCountEl = document.getElementById('info-court-count');
     var courtNumbersEl = document.getElementById('info-court-numbers');
-    var courtCount = data.courtCount || 0;
+    var courtCount = game.court_count || 0;
     if (courtCount > 0){
       courtCountEl.textContent = courtCount + ' court booked';
-      var numbers = (data.courtNumbers && data.courtNumbers.length)
-        ? data.courtNumbers
+      var numbers = (game.court_numbers && game.court_numbers.length)
+        ? game.court_numbers
         : Array.from({ length: courtCount }, function(_, i){ return String(i + 1); });
       courtNumbersEl.textContent = 'Court ' + joinWithAnd(numbers);
     } else {
@@ -985,49 +969,96 @@
     }
 
     // Shuttle
-    var shuttleEl = document.getElementById('info-shuttle');
-    shuttleEl.textContent = data.shuttle || 'No shuttle info provided';
+    document.getElementById('info-shuttle').textContent = game.shuttle || 'No shuttle info provided';
 
     // Price
-    var priceEl = document.getElementById('info-price');
-    priceEl.textContent = data.priceSummary || 'Free';
+    document.getElementById('info-price').textContent = game.price_summary || 'Free';
 
     // Description / rules
     var descriptionEl = document.getElementById('info-description');
-    if (data.description){
+    if (game.description){
       descriptionEl.innerHTML = '';
-      data.description.split(/\n\s*\n/).forEach(function(paragraph){
+      game.description.split(/\n\s*\n/).forEach(function(paragraph){
         var p = document.createElement('p');
         p.innerHTML = paragraph.split('\n').map(function(line){
-          var escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          return applyBoldMarkup(escaped);
+          return applyBoldMarkup(escapeHtml(line));
         }).join('<br>');
         descriptionEl.appendChild(p);
       });
     } else {
       descriptionEl.innerHTML = '<p>No description provided.</p>';
     }
+  }
 
-    // Joined (starts empty — nobody has joined yet)
-    var total = data.participantsTotal || 16;
-    document.getElementById('joined-header').textContent = 'Joined ( 0/' + total + ')';
+  // ---------- Joined / Waiting list (live via Realtime) ----------
+  async function refreshParticipants(){
+    var result = await supabase
+      .from('participants')
+      .select('id, name, waiting')
+      .eq('game_id', gameId)
+      .order('joined_at', { ascending: true });
+
+    latestParticipants = result.data || [];
+    var joined = latestParticipants.filter(function(r){ return !r.waiting; });
+    var waiting = latestParticipants.filter(function(r){ return r.waiting; });
+    var total = currentGame.participants_total || 16;
+
+    document.getElementById('joined-header').textContent = 'Joined ( ' + joined.length + '/' + total + ')';
+
     var grid = document.getElementById('avatar-grid');
     grid.innerHTML = '';
-    for (var i = 0; i < total; i++){
+    joined.forEach(function(p){
       var slot = document.createElement('div');
       slot.className = 'avatar-slot';
       var circle = document.createElement('div');
-      circle.className = 'avatar-circle is-empty';
+      circle.className = 'avatar-circle';
+      circle.textContent = (p.name || '?').charAt(0).toUpperCase();
+      var nameEl = document.createElement('div');
+      nameEl.className = 'avatar-name';
+      nameEl.textContent = p.name;
       slot.appendChild(circle);
+      slot.appendChild(nameEl);
       grid.appendChild(slot);
+    });
+    var emptySlots = Math.max(0, total - joined.length);
+    for (var i = 0; i < emptySlots; i++){
+      var emptySlot = document.createElement('div');
+      emptySlot.className = 'avatar-slot';
+      var emptyCircle = document.createElement('div');
+      emptyCircle.className = 'avatar-circle is-empty';
+      emptySlot.appendChild(emptyCircle);
+      grid.appendChild(emptySlot);
     }
-  });
+
+    document.getElementById('waiting-header').textContent = 'Waiting list (' + waiting.length + ')';
+    var waitingListEl = document.getElementById('waiting-list');
+    if (waitingListEl){
+      if (waiting.length === 0){
+        waitingListEl.innerHTML = '<p class="waiting-hint">If someone who is already in leaves, then the next person in the waitlist joins automatically.</p>';
+      } else {
+        waitingListEl.innerHTML = waiting.map(function(p, i){
+          return '<div class="waiting-row">' + (i + 1) + '. ' + escapeHtml(p.name) + '</div>';
+        }).join('');
+      }
+    }
+
+    updateJoinButtonState();
+  }
+
+  function subscribeRealtime(){
+    supabase
+      .channel('participants-' + gameId)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'participants', filter: 'game_id=eq.' + gameId },
+        function(){ refreshParticipants(); }
+      )
+      .subscribe();
+  }
 
   // ---------- Navigate options bottom sheet ----------
   // The Navigate icon on the Venue row opens a sheet letting the user pick
-  // Google Maps or Waze, using whichever links were pasted on the Create
-  // list page.
-  (function(){
+  // Google Maps or Waze, using whichever links were saved on the game.
+  function setupNavigateSheet(){
     var trigger = document.getElementById('navigate-trigger');
     var overlay = document.getElementById('nav-sheet-overlay');
     var backdrop = document.getElementById('nav-sheet-backdrop');
@@ -1037,10 +1068,8 @@
 
     if (!trigger || !overlay) return;
 
-    gameDataPromise.then(function(data){
-
-    var mapsLink = (data.mapsLink || '').trim();
-    var wazeLink = (data.wazeLink || '').trim();
+    var mapsLink = (currentGame.maps_link || '').trim();
+    var wazeLink = (currentGame.waze_link || '').trim();
 
     gmapsBtn.disabled = !mapsLink;
     wazeBtn.disabled = !wazeLink;
@@ -1085,193 +1114,147 @@
       window.open(wazeLink, '_blank', 'noopener');
       closeSheet();
     });
-    });
-  })();
+  }
 
   // ---------- Join game ----------
   // This page is what a recipient lands on after opening a link shared via
   // game-details.html's "Share game" button. Clicking Join opens a sheet
-  // asking for Name + Phone number; submitting fills the next open avatar
-  // slot (or, once full, adds to the waiting list) and flips the CTA to
-  // "Leave game".
+  // asking for Name + Phone number; submitting calls the join_game() RPC
+  // (which validates the game's optional group whitelist and computes the
+  // waiting-list flag atomically server-side), persisting the join for
+  // real in Supabase so every viewer of this link sees it live via the
+  // Realtime subscription set up in refreshParticipants()/subscribeRealtime()
+  // above — not just the joiner's own device, unlike the old localStorage-
+  // only version of this page.
   //
-  // NOTE on duplicate-join detection: these are static prototype pages
-  // with no backend/database, so there's no shared place to look up
-  // "has this phone number already joined from a different device".
-  // What IS implemented is same-device detection via localStorage, keyed
-  // per-game (derived from the URL's data payload) — reopening this exact
-  // link on the same device/browser correctly shows "Leave game" instead
-  // of letting you join twice. Cross-device duplicate-phone checking would
-  // require a real server to be accurate.
-  (function(){
-    var btn = document.getElementById('join-btn');
-    var overlay = document.getElementById('join-sheet-overlay');
-    var backdrop = document.getElementById('join-sheet-backdrop');
-    var cancelBtn = document.getElementById('join-sheet-cancel');
-    var submitBtn = document.getElementById('join-sheet-submit');
-    var nameInput = document.getElementById('join-name-input');
-    var phoneInput = document.getElementById('join-phone-input');
+  // Players don't have accounts, so "this join is mine" (needed to let you
+  // leave your own join) is proven with a random device id generated once
+  // and cached in localStorage — leave_game() only deletes a participant
+  // row if the device id matches.
+  var joinBtn = document.getElementById('join-btn');
+  var joinOverlay = document.getElementById('join-sheet-overlay');
+  var joinBackdrop = document.getElementById('join-sheet-backdrop');
+  var joinCancelBtn = document.getElementById('join-sheet-cancel');
+  var joinSubmitBtn = document.getElementById('join-sheet-submit');
+  var joinNameInput = document.getElementById('join-name-input');
+  var joinPhoneInput = document.getElementById('join-phone-input');
+  var joinFormErrorEl = document.getElementById('join-form-error');
 
-    if (!btn || !overlay) return;
-
-    function hashString(str){
-      var hash = 0;
-      for (var i = 0; i < str.length; i++){
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0;
-      }
-      return String(hash);
+  function getDeviceId(){
+    var id = localStorage.getItem('pt_device_id');
+    if (!id){
+      id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+      localStorage.setItem('pt_device_id', id);
     }
-    var storageKey = 'pt_join_' + hashString(window.location.search || 'default');
+    return id;
+  }
 
-    function getJoinRecord(){
-      try {
-        var raw = localStorage.getItem(storageKey);
-        return raw ? JSON.parse(raw) : null;
-      } catch (e) { return null; }
-    }
+  function getMyParticipantId(){
+    return localStorage.getItem('pt_join_' + gameId);
+  }
 
-    function setJoinRecord(record){
-      try { localStorage.setItem(storageKey, JSON.stringify(record)); } catch (e) {}
-    }
+  function setMyParticipantId(id){
+    localStorage.setItem('pt_join_' + gameId, id);
+  }
 
-    function clearJoinRecord(){
-      try { localStorage.removeItem(storageKey); } catch (e) {}
+  function clearMyParticipantId(){
+    localStorage.removeItem('pt_join_' + gameId);
+  }
+
+  // Reconciles the Join/Leave button label against the latest fetched
+  // participants list — called after every refreshParticipants(), so it
+  // stays correct whether the change came from this device or someone
+  // else's (e.g. the host removing you from the roster).
+  function updateJoinButtonState(){
+    if (!joinBtn) return;
+    var myId = getMyParticipantId();
+    if (!myId){
+      joinBtn.textContent = 'Join';
+      return;
     }
+    var mine = latestParticipants.filter(function(p){ return p.id === myId; })[0];
+    if (!mine){
+      // Our row is gone (host removed us, or it never existed) — reset.
+      clearMyParticipantId();
+      joinBtn.textContent = 'Join';
+      return;
+    }
+    joinBtn.textContent = mine.waiting ? 'Leave waiting list' : 'Leave game';
+  }
+
+  function setupJoinSheet(){
+    if (!joinBtn || !joinOverlay) return;
 
     function openSheet(){
-      overlay.classList.add('open');
-      overlay.setAttribute('aria-hidden', 'false');
+      joinFormErrorEl.classList.remove('visible');
+      joinOverlay.classList.add('open');
+      joinOverlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
-      nameInput.focus();
+      joinNameInput.focus();
     }
 
     function closeSheet(){
-      overlay.classList.remove('open');
-      overlay.setAttribute('aria-hidden', 'true');
+      joinOverlay.classList.remove('open');
+      joinOverlay.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
     }
 
-    function bumpJoinedCount(delta){
-      var joinedHeaderEl = document.getElementById('joined-header');
-      var match = joinedHeaderEl && joinedHeaderEl.textContent.match(/(\d+)\s*\/\s*(\d+)/);
-      if (!match) return;
-      var next = Math.max(0, parseInt(match[1], 10) + delta);
-      joinedHeaderEl.textContent = 'Joined ( ' + next + '/' + match[2] + ')';
-    }
+    joinBtn.addEventListener('click', async function(){
+      var myId = getMyParticipantId();
 
-    function bumpWaitingCount(delta){
-      var waitingHeaderEl = document.getElementById('waiting-header');
-      var match = waitingHeaderEl && waitingHeaderEl.textContent.match(/\((\d+)\)/);
-      var next = Math.max(0, (match ? parseInt(match[1], 10) : 0) + delta);
-      if (waitingHeaderEl) waitingHeaderEl.textContent = 'Waiting list (' + next + ')';
-    }
-
-    function fillNextSlot(name){
-      var grid = document.getElementById('avatar-grid');
-      var emptyCircle = grid ? grid.querySelector('.avatar-circle.is-empty') : null;
-      if (!emptyCircle) return null;
-
-      emptyCircle.classList.remove('is-empty');
-      emptyCircle.dataset.selfJoined = 'true';
-      emptyCircle.textContent = name.charAt(0).toUpperCase();
-
-      var nameEl = document.createElement('div');
-      nameEl.className = 'avatar-name';
-      nameEl.textContent = name;
-      emptyCircle.parentElement.appendChild(nameEl);
-
-      return emptyCircle;
-    }
-
-    function removeSelfSlot(){
-      var grid = document.getElementById('avatar-grid');
-      var selfCircle = grid ? grid.querySelector('[data-self-joined="true"]') : null;
-      if (!selfCircle) return;
-      var slot = selfCircle.parentElement;
-      grid.removeChild(slot);
-
-      // Add a fresh empty slot back so the total slot count stays correct.
-      var newSlot = document.createElement('div');
-      newSlot.className = 'avatar-slot';
-      var newCircle = document.createElement('div');
-      newCircle.className = 'avatar-circle is-empty';
-      newSlot.appendChild(newCircle);
-      grid.appendChild(newSlot);
-    }
-
-    btn.addEventListener('click', function(){
-      var record = getJoinRecord();
-
-      if (record){
+      if (myId){
         // Leave.
-        if (record.waiting){
-          bumpWaitingCount(-1);
-        } else {
-          removeSelfSlot();
-          bumpJoinedCount(-1);
-        }
-        clearJoinRecord();
-        btn.textContent = 'Join';
+        joinBtn.disabled = true;
+        await supabase.rpc('leave_game', { p_participant_id: myId, p_device_id: getDeviceId() });
+        clearMyParticipantId();
+        joinBtn.disabled = false;
+        await refreshParticipants();
         return;
       }
 
       openSheet();
     });
 
-    backdrop.addEventListener('click', closeSheet);
-    cancelBtn.addEventListener('click', closeSheet);
+    joinBackdrop.addEventListener('click', closeSheet);
+    joinCancelBtn.addEventListener('click', closeSheet);
 
     document.addEventListener('keydown', function(e){
-      if (e.key === 'Escape' && overlay.classList.contains('open')) closeSheet();
+      if (e.key === 'Escape' && joinOverlay.classList.contains('open')) closeSheet();
     });
 
-    submitBtn.addEventListener('click', function(){
-      var name = nameInput.value.trim();
-      var phone = phoneInput.value.trim();
+    joinSubmitBtn.addEventListener('click', async function(){
+      var name = joinNameInput.value.trim();
+      var phone = joinPhoneInput.value.trim();
 
-      nameInput.classList.toggle('is-invalid', !name);
-      phoneInput.classList.toggle('is-invalid', !phone);
+      joinNameInput.classList.toggle('is-invalid', !name);
+      joinPhoneInput.classList.toggle('is-invalid', !phone);
+      joinFormErrorEl.classList.remove('visible');
       if (!name || !phone) return;
 
-      var slot = fillNextSlot(name);
-      if (slot){
-        bumpJoinedCount(1);
-        setJoinRecord({ name: name, phone: phone, joinedAt: Date.now() });
-        btn.textContent = 'Leave game';
-      } else {
-        bumpWaitingCount(1);
-        setJoinRecord({ name: name, phone: phone, joinedAt: Date.now(), waiting: true });
-        btn.textContent = 'Leave waiting list';
+      joinSubmitBtn.disabled = true;
+      var result = await supabase.rpc('join_game', {
+        p_game_id: gameId, p_name: name, p_phone: phone, p_device_id: getDeviceId()
+      });
+      joinSubmitBtn.disabled = false;
+
+      if (result.error){
+        var message = (result.error.message || '').indexOf('PHONE_NOT_WHITELISTED') !== -1
+          ? "This phone number isn't on the host's guest list. Contact the host to be added."
+          : 'Could not join: ' + result.error.message;
+        joinFormErrorEl.textContent = message;
+        joinFormErrorEl.classList.add('visible');
+        return;
       }
 
-      nameInput.value = '';
-      phoneInput.value = '';
-      nameInput.classList.remove('is-invalid');
-      phoneInput.classList.remove('is-invalid');
+      setMyParticipantId(result.data.id);
+      joinNameInput.value = '';
+      joinPhoneInput.value = '';
+      joinNameInput.classList.remove('is-invalid');
+      joinPhoneInput.classList.remove('is-invalid');
       closeSheet();
+      await refreshParticipants();
     });
-
-    // On load: if this device already has a join record for this exact
-    // game link, reflect that immediately instead of showing "Join". This
-    // has to wait for gameDataPromise (chained after the populate and
-    // nav-sheet handlers above, so it runs once the avatar grid actually
-    // has slots) — filling a slot before the grid is populated would
-    // silently no-op, and the joined count would get overwritten back to
-    // 0 once the real data loads.
-    gameDataPromise.then(function(){
-      var existing = getJoinRecord();
-      if (existing){
-        if (existing.waiting){
-          btn.textContent = 'Leave waiting list';
-        } else {
-          fillNextSlot(existing.name);
-          bumpJoinedCount(1);
-          btn.textContent = 'Leave game';
-        }
-      }
-    });
-  })();
+  }
 </script>
 
 </body>
